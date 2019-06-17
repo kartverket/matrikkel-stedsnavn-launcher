@@ -1,0 +1,106 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
+group = 'no.statkart.launcher'
+version = '1.2'
+
+apply from: 'gradle/defaultBuildProperties.gradle'
+apply from: 'gradle/libraries.gradle'
+
+repositories {
+    mavenLocal()
+    maven {
+        url maven_repo
+    }
+}
+
+configurations {
+    client
+    server
+}
+
+sourceSets {
+    client
+    server
+}
+
+dependencies {
+    clientCompile libraries.getdown_launcher
+    serverCompile libraries.getdown_core
+    serverCompile libraries.slf4j_api
+    serverCompileOnly libraries.servlet_api
+
+    compile gradleApi()
+    compile libraries.commons_compress
+    compile libraries.jsign
+    compile libraries.seven_z
+    compile files('lib/packr-2.0-SNAPSHOT.jar')
+}
+
+task clientJar(type: Jar) {
+    dependsOn configurations.clientCompile
+    archiveName 'client.jar'
+    from sourceSets.client.output
+    destinationDir file('build/client/libs')
+    manifest {
+        attributes(
+                'Implementation-Title': 'Kartverkets launcher client',
+                'Implementation-Version': version
+        )
+    }
+}
+
+task serverJar(type: Jar) {
+    dependsOn configurations.serverCompile
+    archiveName 'server.jar'
+    from sourceSets.server.output
+    destinationDir file('build/server/libs')
+    manifest {
+        attributes(
+                'Implementation-Title': 'Kartverkets launcher server',
+                'Implementation-Version': version
+        )
+    }
+}
+
+task clientJarDependencies(type: Copy) {
+    dependsOn configurations.clientCompile
+    from configurations.clientCompile
+    into 'build/client/libs'
+}
+
+task serverJarDependencies(type: Copy) {
+    dependsOn configurations.serverCompile
+    from configurations.serverCompile
+    into 'build/server/libs'
+}
+
+jar {
+    dependsOn clientJar
+    dependsOn serverJar
+    dependsOn clientJarDependencies
+    dependsOn serverJarDependencies
+    from {
+        // Pluginen trenger denne, men den ligger ikke i maven
+        zipTree(file('lib/packr-2.0-SNAPSHOT.jar'))
+    }
+    into('jdk') { from('jdk') { include 'jdk-*.zip' } }
+    into('libs/client') { from('build/client/libs') }
+    into('libs/server') { from('build/server/libs') }
+    manifest {
+        attributes(
+                'Implementation-Title': 'Kartverkets launcher',
+                'Implementation-Version': version
+        )
+    }
+}
+
+publishing {
+    publications {
+        artifakt(MavenPublication) {
+            from components.java
+        }
+    }
+}

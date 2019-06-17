@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="windows-1252"?>
+<!DOCTYPE web-app PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
+        "http://java.sun.com/dtd/web-app_2_3.dtd">
+
+<web-app>
+    <display-name>MatrikkelLauncher</display-name>
+    <distributable/>
+
+    <filter>
+        <filter-name>NoCache</filter-name>
+        <filter-class>no.statkart.matrikkel.launcher.servlet.filter.ResponseHeaderFilter</filter-class>
+        <init-param>
+            <param-name>Cache-Control</param-name>
+            <param-value>must-revalidate</param-value>
+        </init-param>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>NoCache</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <servlet>
+        <servlet-name>BootstrapGetdownServlet</servlet-name>
+        <servlet-class>no.statkart.matrikkel.launcher.servlet.BootstrapGetdownServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <!-- All informasjon skal overføres kryptert (integritet) -->
+    <security-constraint>
+        <!-- Tillat autentiseringsfri nedlasting av klientnodene -->
+        <web-resource-collection>
+            <web-resource-name>Klientnode</web-resource-name>
+            <url-pattern>/distributions/*</url-pattern>
+        </web-resource-collection>
+        <user-data-constraint>
+            <transport-guarantee>INTEGRAL</transport-guarantee>
+        </user-data-constraint>
+    </security-constraint>
+
+    <security-constraint>
+        <!-- Nedlasting av programvarebiblioteker skal kun kunne skje for matrikkelklientens brukere (autentisering) -->
+        <web-resource-collection>
+            <web-resource-name>Matrikkelen</web-resource-name>
+            <description>Nedlastingsider for Matrikkelen</description>
+            <url-pattern>/*</url-pattern>
+            <http-method>POST</http-method>
+            <http-method>GET</http-method>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>matrikkeluser</role-name>
+        </auth-constraint>
+        <user-data-constraint>
+            <transport-guarantee>INTEGRAL</transport-guarantee>
+        </user-data-constraint>
+    </security-constraint>
+
+    <security-role>
+        <role-name>matrikkeluser</role-name>
+    </security-role>
+
+</web-app>

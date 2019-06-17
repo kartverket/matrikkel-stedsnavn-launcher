@@ -1,0 +1,14 @@
+[
+        "maven_repo"                                : "https://nexus.statkart.no/repository/public/",
+].sort().each { keyValuePair ->
+    applyDefaultValueForBuildProperty(keyValuePair.key, keyValuePair.value)
+}
+
+void applyDefaultValueForBuildProperty(String key, Object defaultValue) {
+    if (hasProperty(key)) {
+        logger.info("Key: " + key + " -> was provided with value: " + getProperty(key))
+    } else {
+        logger.info("Key: " + key + " -> not provided, falling back to default value: " + defaultValue)
+        project.ext.set(key, defaultValue)
+    }
+}

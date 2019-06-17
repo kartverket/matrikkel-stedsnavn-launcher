@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<weblogic-web-app xmlns="http://xmlns.oracle.com/weblogic/weblogic-web-app">
+    <!-- Denne er for at war'en skal pakkes ut -->
+    <container-descriptor>
+        <show-archived-real-path-enabled>true</show-archived-real-path-enabled>
+    </container-descriptor>
+
+    <security-role-assignment>
+        <role-name>matrikkeluser</role-name>
+        <principal-name>Innsyn</principal-name>
+    </security-role-assignment>
+</weblogic-web-app>
