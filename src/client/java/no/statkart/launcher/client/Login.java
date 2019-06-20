@@ -40,7 +40,7 @@ class Login {
             });
             gyldigCredentials = credentials.get();
             try {
-                URL tst = new URL(gyldigCredentials.getServer() + "/launcher/getdown.txt");
+                URL tst = new URL(gyldigCredentials.getServer() + Konfigurasjon.get("tryCredentialsUsing"));
                 tst.openConnection().getInputStream();
                 loggInnIKlienten(gyldigCredentials);
                 registrerLauncherVersjon(versjon);

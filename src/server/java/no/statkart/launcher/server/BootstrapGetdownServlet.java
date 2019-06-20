@@ -1,7 +1,6 @@
 package no.statkart.launcher.server;
 
 import com.threerings.getdown.tools.Digester;
-//import no.statkart.matrikkel.config.MatrikkelenProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,9 +17,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
- * Servlet ansvarlig for å sette URLen i den utvidede launcher-webappkonfigurasjonen.
+ * Servlet ansvarlig for å sette URLen i den utvidede launcher-webappkonfigurasjonen,
+ * og deretter lage digests (sjekksummer) av alle artifaktene.
  * <p/>
  * Dette gjøres bare ved initial load av servleten.
  */
@@ -31,19 +32,19 @@ public class BootstrapGetdownServlet extends HttpServlet {
     private static final Logger LOG = LoggerFactory.getLogger(BootstrapGetdownServlet.class);
 
     @Override
-    public void init() throws ServletException {
+    public final void init() throws ServletException {
         try {
             Path mappe = finnMappe();
             patchGetDownTxt(mappe, patchAppBase());
             opprettDigests(mappe);
-            LOG.info("xxx Patchet getdown.txt appbase og opprettet digests i " + mappe);
+            LOG.info("Patchet getdown.txt appbase og opprettet digests i " + mappe);
         } catch (Exception e) {
             throw new ServletException(e);
         }
     }
 
     private Path finnMappe() {
-        String mappe = getServletContext().getRealPath("/");
+        String mappe = getServletContext().getRealPath("/vault");
         return Paths.get(mappe);
     }
 
@@ -75,14 +76,23 @@ public class BootstrapGetdownServlet extends HttpServlet {
         Digester.createDigests(mappe.toFile(), null, null, null);
     }
 
-    private static String getURL() {
-        return "https://ltwinoys1.statkart.no:7002/";
-        // MatrikkelenProperties instance = MatrikkelenProperties.getInstance();
-        // String serverURL = instance.getMatrikkelServerClusterProvider();
-        // if (serverURL == null) {
-        //     serverURL = instance.getMatrikkelServerUrl();
-        // }
-        // return serverURL;
+    private String getURL() {
+        String classname = getInitParameter("urlSupplierClass");
+        Object o1;
+        try {
+            o1 = Class.forName(classname).newInstance();
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not create instace of " + classname, e);
+        }
+        if (!(o1 instanceof Supplier)) {
+            throw new IllegalStateException(classname + " must be instance of Supplier");
+        }
+        Supplier<?> supplier = (Supplier<?>) o1;
+        Object o2 = supplier.get();
+        if (!(o2 instanceof String)) {
+            throw new IllegalStateException(classname + " must supply String");
+        }
+        return (String) o2;
     }
 
 }

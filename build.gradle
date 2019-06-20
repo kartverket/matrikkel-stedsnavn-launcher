@@ -43,7 +43,7 @@ task clientJar(type: Jar) {
     dependsOn configurations.clientCompile
     archiveName 'client.jar'
     from sourceSets.client.output
-    destinationDir file('build/client/libs')
+    destinationDir file('build/client/lib')
     manifest {
         attributes(
                 'Implementation-Title': 'Kartverkets launcher client',
@@ -56,7 +56,7 @@ task serverJar(type: Jar) {
     dependsOn configurations.serverCompile
     archiveName 'server.jar'
     from sourceSets.server.output
-    destinationDir file('build/server/libs')
+    destinationDir file('build/server/lib')
     manifest {
         attributes(
                 'Implementation-Title': 'Kartverkets launcher server',
@@ -66,15 +66,15 @@ task serverJar(type: Jar) {
 }
 
 task clientJarDependencies(type: Copy) {
-    dependsOn configurations.clientCompile
-    from configurations.clientCompile
-    into 'build/client/libs'
+    dependsOn configurations.clientRuntime
+    from configurations.clientRuntime
+    into 'build/client/lib'
 }
 
 task serverJarDependencies(type: Copy) {
-    dependsOn configurations.serverCompile
-    from configurations.serverCompile
-    into 'build/server/libs'
+    dependsOn configurations.serverRuntime
+    from configurations.serverRuntime
+    into 'build/server/lib'
 }
 
 jar {
@@ -87,8 +87,8 @@ jar {
         zipTree(file('lib/packr-2.0-SNAPSHOT.jar'))
     }
     into('jdk') { from('jdk') { include 'jdk-*.zip' } }
-    into('libs/client') { from('build/client/libs') }
-    into('libs/server') { from('build/server/libs') }
+    into('lib/client') { from('build/client/lib') }
+    into('lib/server') { from('build/server/lib') }
     manifest {
         attributes(
                 'Implementation-Title': 'Kartverkets launcher',

@@ -3,7 +3,7 @@ package no.statkart.launcher.gradle.plugin;
 import com.badlogicgames.packr.Packr;
 import com.badlogicgames.packr.PackrConfig;
 import org.gradle.api.DefaultTask;
-import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.ByteArrayOutputStream;
@@ -70,18 +70,19 @@ public class LauncherTask extends DefaultTask {
     }
 
     private void opprettTjenerWebapp() throws IOException {
-        opprettPathingJar(utvidelse().getClasspath(), "build/launcher/war/vault/libs/client-dependencies.jar");
-        copy(utvidelse().getClasspath(), "build/launcher/war/vault/libs");
+        opprettPathingJar(utvidelse().getClasspath(), "build/launcher/war/vault/client-dependencies.jar");
+        copy(utvidelse().getClasspath(), "build/launcher/war/vault");
         copy(utvidelse().getWebinf(), "build/launcher/war/WEB-INF");
-        copyResources("libs/server", "build/launcher/war/WEB-INF/lib");
+        copyResources("lib/server", "build/launcher/war/WEB-INF/lib");
+        copy(utvidelse().getWebinfLibs(), "build/launcher/war/WEB-INF/lib");
         copy(getGetdown().getServer(), "build/launcher/war/vault");
         replace("build/launcher/war/vault/getdown.txt", "@@code@@", asCode(utvidelse().getClasspath()));
     }
 
-    private String asCode(Configuration configuration) {
+    private String asCode(FileCollection files) {
         StringBuilder sb = new StringBuilder();
         sb.append("code = client-dependencies.jar\n");
-        configuration.resolve().forEach(f ->
+        files.forEach(f ->
             sb.append("resource = ").append(f.getName()).append("\n")
         );
         return sb.toString();
@@ -95,9 +96,9 @@ public class LauncherTask extends DefaultTask {
         Files.write(filePath, content.getBytes(charset));
     }
 
-    private void opprettPathingJar(Configuration configuration, String toFile) throws IOException {
+    private void opprettPathingJar(FileCollection files, String toFile) throws IOException {
         StringBuilder sb = new StringBuilder();
-        configuration.resolve().forEach(f ->
+        files.forEach(f ->
             sb.append(f.getName()).append(" ")
         );
         Manifest manifest = new Manifest();
@@ -142,7 +143,7 @@ public class LauncherTask extends DefaultTask {
 
     private void packr(PackrConfig.Platform platform, String alias) throws IOException {
         String jdk = "jdk-" + JDK_VERSION + "-" + alias;
-        copyResources("libs/client", "build/launcher/libs/");
+        copyResources("lib/client", "build/launcher/lib/");
         copyResource("jdk/" + jdk + ".zip", "build/launcher/jdk/");
         unzip("build/launcher/jdk/" + jdk + ".zip", "build/launcher/jdk/");
         try {
@@ -152,7 +153,7 @@ public class LauncherTask extends DefaultTask {
             config.mainClass = "no.statkart.launcher.client.Wrapper";
             config.cacheJre = new File("build/launcher/jdk/" + jdk);
             config.outDir = new File("build/launcher/packr/" + alias);
-            config.classpath = Files.list(toAbsolutePath("build/launcher/libs"))
+            config.classpath = Files.list(toAbsolutePath("build/launcher/lib"))
                 .map(Path::toString)
                 .collect(Collectors.toList());
             String icons = utvidelse().getIcons();
@@ -171,14 +172,14 @@ public class LauncherTask extends DefaultTask {
         copy(getGetdown().getClient(), "build/launcher/packr/" + alias + "/work");
     }
 
-    private void copy(Configuration configuration, String toDir) {
+    private void copy(FileCollection files, String toDir) {
         Path toDirPath = toAbsolutePath(toDir);
-        configuration.resolve().forEach(f -> {
+        files.forEach(f -> {
             Path p = f.toPath();
             Path target = toDirPath.resolve(p.getFileName());
             try {
                 Files.createDirectories(target.getParent());
-                Files.copy(p, target);
+                Files.copy(p, target, StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -194,7 +195,7 @@ public class LauncherTask extends DefaultTask {
                     try {
                         Path target = toDirPath.resolve(fromDirPath.relativize(source));
                         Files.createDirectories(target.getParent());
-                        Files.copy(source, target);
+                        Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }

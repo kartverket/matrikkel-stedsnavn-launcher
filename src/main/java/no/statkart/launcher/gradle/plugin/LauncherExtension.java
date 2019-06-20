@@ -1,14 +1,15 @@
 package no.statkart.launcher.gradle.plugin;
 
 import groovy.lang.Closure;
-import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.file.FileCollection;
 import org.gradle.util.ConfigureUtil;
 
 public class LauncherExtension {
 
-    private Configuration classpath;
+    private FileCollection classpath;
     private String executable;
     private String webinf;
+    private FileCollection webinfLibs;
     private String icons;
 
     private GetdownExtension getdownExt;
@@ -16,7 +17,7 @@ public class LauncherExtension {
 
     // Kalles vha refleksjon av gradle
     @SuppressWarnings("unused")
-    public void classpath(Configuration classpath) {
+    public void classpath(FileCollection classpath) {
         this.classpath = classpath;
     }
 
@@ -30,6 +31,12 @@ public class LauncherExtension {
     @SuppressWarnings("unused")
     public void webinf(String webinf) {
         this.webinf = webinf;
+    }
+
+    // Kalles vha refleksjon av gradle
+    @SuppressWarnings("unused")
+    public void webinfLibs(FileCollection webinfLibs) {
+        this.webinfLibs = webinfLibs;
     }
 
     // Kalles vha refleksjon av gradle
@@ -52,7 +59,7 @@ public class LauncherExtension {
         ConfigureUtil.configure(c, artifakterExt);
     }
 
-    Configuration getClasspath() {
+    FileCollection getClasspath() {
         return classpath;
     }
 
@@ -62,6 +69,10 @@ public class LauncherExtension {
 
     String getWebinf() {
         return webinf;
+    }
+
+    FileCollection getWebinfLibs() {
+        return webinfLibs;
     }
 
     String getIcons() {
