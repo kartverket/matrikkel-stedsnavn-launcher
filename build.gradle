@@ -6,6 +6,10 @@ plugins {
 group = 'no.statkart.launcher'
 version = '1.2'
 
+// Launcheren skal kompileres med og kjøres av denne java-versjonen.
+// Klienten som launcheren starter opp skal kjøres av denne java-versjonen.
+sourceCompatibility = JavaVersion.VERSION_12
+
 apply from: 'gradle/defaultBuildProperties.gradle'
 apply from: 'gradle/libraries.gradle'
 
@@ -24,6 +28,13 @@ configurations {
 sourceSets {
     client
     server
+}
+
+// Server-kildekoden skal deployes i en servlet-container.
+// For Kartverket betyr dette per i dag weblogic - som kjører på java 1.8.
+compileServerJava {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 dependencies {
@@ -47,7 +58,7 @@ task clientJar(type: Jar) {
     manifest {
         attributes(
                 'Implementation-Title': 'Kartverkets launcher client',
-                'Implementation-Version': version
+                'Implementation-Version': archiveVersion
         )
     }
 }
@@ -60,7 +71,7 @@ task serverJar(type: Jar) {
     manifest {
         attributes(
                 'Implementation-Title': 'Kartverkets launcher server',
-                'Implementation-Version': version
+                'Implementation-Version': archiveVersion
         )
     }
 }
@@ -92,7 +103,7 @@ jar {
     manifest {
         attributes(
                 'Implementation-Title': 'Kartverkets launcher',
-                'Implementation-Version': version
+                'Implementation-Version': archiveVersion
         )
     }
 }
