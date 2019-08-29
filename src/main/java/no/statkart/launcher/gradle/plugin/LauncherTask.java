@@ -15,14 +15,7 @@ import java.net.JarURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -151,8 +144,8 @@ public class LauncherTask extends DefaultTask {
             config.platform = platform;
             config.executable = utvidelse().getExecutable();
             config.mainClass = "no.statkart.launcher.client.Wrapper";
-            config.cacheJre = new File("build/launcher/jdk/" + jdk);
-            config.outDir = new File("build/launcher/packr/" + alias);
+            config.cacheJre = toAbsolutePath("build/launcher/jdk/" + jdk).toFile();
+            config.outDir = toAbsolutePath("build/launcher/packr/" + alias).toFile();
             config.classpath = Files.list(toAbsolutePath("build/launcher/lib"))
                 .map(Path::toString)
                 .collect(Collectors.toList());
@@ -254,7 +247,7 @@ public class LauncherTask extends DefaultTask {
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     Path target = outputDirPath.resolve(zipRoot.relativize(file).toString());
                     Files.createDirectories(target.getParent());
-                    Files.copy(file, target);
+                    Files.copy(file, target, StandardCopyOption.REPLACE_EXISTING);
                     return FileVisitResult.CONTINUE;
                 }
             });
