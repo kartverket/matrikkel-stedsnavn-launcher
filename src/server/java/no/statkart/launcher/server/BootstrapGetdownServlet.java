@@ -80,9 +80,9 @@ public class BootstrapGetdownServlet extends HttpServlet {
         String classname = getInitParameter("urlSupplierClass");
         Object o1;
         try {
-            o1 = Class.forName(classname).newInstance();
+            o1 = Class.forName(classname).getDeclaredConstructor().newInstance();
         } catch (Exception e) {
-            throw new IllegalStateException("Could not create instace of " + classname, e);
+            throw new IllegalStateException("Could not create instance of " + classname, e);
         }
         if (!(o1 instanceof Supplier)) {
             throw new IllegalStateException(classname + " must be instance of Supplier");

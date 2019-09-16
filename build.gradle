@@ -20,11 +20,6 @@ repositories {
     }
 }
 
-configurations {
-    client
-    server
-}
-
 sourceSets {
     client
     server
@@ -38,21 +33,21 @@ compileServerJava {
 }
 
 dependencies {
-    clientCompile libraries.getdown_launcher
-    serverCompile libraries.getdown_core
-    serverCompile libraries.slf4j_api
+    clientImplementation libraries.getdown_launcher
+    serverImplementation libraries.getdown_core
+    serverImplementation libraries.slf4j_api
     serverCompileOnly libraries.servlet_api
 
-    compile gradleApi()
-    compile libraries.commons_compress
-    compile libraries.jsign
-    compile libraries.seven_z
-    compile files('lib/packr-2.0-SNAPSHOT.jar')
+    api libraries.commons_compress
+    api libraries.jsign
+    api libraries.seven_z
+
+    implementation gradleApi()
+    implementation files('lib/packr-2.0-SNAPSHOT.jar')
 }
 
 task clientJar(type: Jar) {
-    dependsOn configurations.clientCompile
-    archiveName 'client.jar'
+    archiveName "launcher-client-${archiveVersion.get()}.jar"
     from sourceSets.client.output
     destinationDir file('build/client/lib')
     manifest {
@@ -64,8 +59,7 @@ task clientJar(type: Jar) {
 }
 
 task serverJar(type: Jar) {
-    dependsOn configurations.serverCompile
-    archiveName 'server.jar'
+    archiveName "launcher-server-${archiveVersion.get()}.jar"
     from sourceSets.server.output
     destinationDir file('build/server/lib')
     manifest {
@@ -77,14 +71,14 @@ task serverJar(type: Jar) {
 }
 
 task clientJarDependencies(type: Copy) {
-    dependsOn configurations.clientRuntime
-    from configurations.clientRuntime
+    dependsOn configurations.clientRuntimeClasspath
+    from configurations.clientRuntimeClasspath
     into 'build/client/lib'
 }
 
 task serverJarDependencies(type: Copy) {
-    dependsOn configurations.serverRuntime
-    from configurations.serverRuntime
+    dependsOn configurations.serverRuntimeClasspath
+    from configurations.serverRuntimeClasspath
     into 'build/server/lib'
 }
 
