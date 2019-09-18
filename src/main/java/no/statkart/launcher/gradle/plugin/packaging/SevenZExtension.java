@@ -70,7 +70,7 @@ public class SevenZExtension implements PackagingExtension {
         Files.createDirectories(destination.getParent());
         try (SevenZOutputFile sevenZOutputFile = new SevenZOutputFile(destination.toFile())) {
             sevenZOutputFile.setContentCompression(method);
-            Files.walkFileTree(source, new SimpleFileVisitor<Path>() {
+            Files.walkFileTree(source, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     Path path = source.relativize(file);
@@ -102,7 +102,7 @@ public class SevenZExtension implements PackagingExtension {
         Path sfxConfigPath = sfxConfig.toPath();
         String klientversjon = //destination.getFileName().toString().replaceAll("^.*-(\\d+\\.\\d+)-.*$", "$1");
                 getClass().getPackage().getImplementationVersion();
-        String configInnhold = new String(Files.readAllBytes(sfxConfigPath), StandardCharsets.UTF_8);
+        String configInnhold = Files.readString(sfxConfigPath);
         configInnhold = configInnhold.replaceAll("%klientversjon%", klientversjon);
         try (FileChannel out = FileChannel.open(destination, CREATE, WRITE)) {
             append(out, sfxPath);

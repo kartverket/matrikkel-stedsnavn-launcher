@@ -25,7 +25,7 @@ public class ZipExtension implements PackagingExtension {
     public void execute(Path source, Path destination) throws IOException {
         Files.createDirectories(destination.getParent());
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(destination.toFile()))) {
-            Files.walkFileTree(source, new SimpleFileVisitor<Path>() {
+            Files.walkFileTree(source, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     Path path = source.relativize(file);

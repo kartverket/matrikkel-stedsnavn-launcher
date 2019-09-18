@@ -28,7 +28,7 @@ class Login {
                     .medTidligereFeil(feil)
                     .medForslagTilTjenere(tjenere)
                     .innhentTjenerOgBrukernavnOgPassord();
-            if (!credentials.isPresent()) {
+            if (credentials.isEmpty()) {
                 System.exit(0);
             }
             String user = credentials.get().getUser();

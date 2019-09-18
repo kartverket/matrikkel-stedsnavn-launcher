@@ -26,6 +26,7 @@ public class TarGzExtension implements PackagingExtension {
     }
 
     @Override
+    @SuppressWarnings("OctalInteger")
     public void execute(Path source, Path destination) throws IOException {
         Files.createDirectories(destination.getParent());
         try (FileOutputStream fileOutputStream = new FileOutputStream(destination.toFile());
