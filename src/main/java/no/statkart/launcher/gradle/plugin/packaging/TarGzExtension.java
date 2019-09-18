@@ -32,7 +32,7 @@ public class TarGzExtension implements PackagingExtension {
              BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
              GzipCompressorOutputStream gzipOutputStream = new GzipCompressorOutputStream(bufferedOutputStream);
              TarArchiveOutputStream taos = new TarArchiveOutputStream(gzipOutputStream)) {
-            Files.walkFileTree(source, new SimpleFileVisitor<Path>() {
+            Files.walkFileTree(source, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     Path path = source.relativize(file);

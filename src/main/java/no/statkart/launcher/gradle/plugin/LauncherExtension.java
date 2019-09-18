@@ -12,6 +12,7 @@ public class LauncherExtension {
     private FileCollection webinfLibs;
     private String icons;
 
+    private JvmExtension jvmExt;
     private GetdownExtension getdownExt;
     private ArtifakterExtension artifakterExt;
 
@@ -47,6 +48,13 @@ public class LauncherExtension {
 
     // Kalles vha refleksjon av gradle
     @SuppressWarnings("unused")
+    public void jvm(Closure c) {
+        jvmExt = new JvmExtension();
+        ConfigureUtil.configure(c, jvmExt);
+    }
+
+    // Kalles vha refleksjon av gradle
+    @SuppressWarnings("unused")
     public void getdown(Closure c) {
         getdownExt = new GetdownExtension();
         ConfigureUtil.configure(c, getdownExt);
@@ -77,6 +85,10 @@ public class LauncherExtension {
 
     String getIcons() {
         return icons;
+    }
+
+    JvmExtension getJvmUtvidelse() {
+        return jvmExt;
     }
 
     GetdownExtension getGetdownUtvidelse() {

@@ -53,7 +53,7 @@ task clientJar(type: Jar) {
     manifest {
         attributes(
                 'Implementation-Title': 'Kartverkets launcher client',
-                'Implementation-Version': archiveVersion
+                'Implementation-Version': archiveVersion.get()
         )
     }
 }
@@ -65,7 +65,7 @@ task serverJar(type: Jar) {
     manifest {
         attributes(
                 'Implementation-Title': 'Kartverkets launcher server',
-                'Implementation-Version': archiveVersion
+                'Implementation-Version': archiveVersion.get()
         )
     }
 }
@@ -91,13 +91,18 @@ jar {
         // Pluginen trenger denne, men den ligger ikke i maven
         zipTree(file('lib/packr-2.0-SNAPSHOT.jar'))
     }
-    into('jdk') { from('jdk') { include 'jdk-*.zip' } }
+    into('jdk') {
+        from('jdk') {
+            include 'openjdk-*'
+            include 'fonts/*'
+        }
+    }
     into('lib/client') { from('build/client/lib') }
     into('lib/server') { from('build/server/lib') }
     manifest {
         attributes(
                 'Implementation-Title': 'Kartverkets launcher',
-                'Implementation-Version': archiveVersion
+                'Implementation-Version': archiveVersion.get()
         )
     }
 }

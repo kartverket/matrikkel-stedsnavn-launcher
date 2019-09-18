@@ -2,37 +2,28 @@ package no.statkart.launcher.gradle.plugin;
 
 import com.badlogicgames.packr.Packr;
 import com.badlogicgames.packr.PackrConfig;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.TaskAction;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystem;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.jar.Attributes;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.jar.JarOutputStream;
-import java.util.jar.Manifest;
+import java.util.*;
+import java.util.jar.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 
 public class LauncherTask extends DefaultTask {
-
-    private static final String JDK_VERSION = "12";
 
     @TaskAction
     @SuppressWarnings("unused")
@@ -49,7 +40,7 @@ public class LauncherTask extends DefaultTask {
         Files.createDirectories(destination.getParent());
         try (FileOutputStream fileOutputStream = new FileOutputStream(destination.toFile());
              JarOutputStream jos = new JarOutputStream(fileOutputStream)) {
-            Files.walkFileTree(source, new SimpleFileVisitor<Path>() {
+            Files.walkFileTree(source, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     Path path = source.relativize(file);
@@ -76,7 +67,7 @@ public class LauncherTask extends DefaultTask {
         StringBuilder sb = new StringBuilder();
         sb.append("code = client-dependencies.jar\n");
         files.forEach(f ->
-            sb.append("resource = ").append(f.getName()).append("\n")
+                sb.append("resource = ").append(f.getName()).append("\n")
         );
         return sb.toString();
     }
@@ -84,15 +75,15 @@ public class LauncherTask extends DefaultTask {
     private void replace(String file, String token, String replacement) throws IOException {
         Path filePath = toAbsolutePath(file);
         Charset charset = StandardCharsets.UTF_8;
-        String content = new String(Files.readAllBytes(filePath), charset);
+        String content = Files.readString(filePath, charset);
         content = content.replace(token, replacement);
-        Files.write(filePath, content.getBytes(charset));
+        Files.writeString(filePath, content, charset);
     }
 
     private void opprettPathingJar(FileCollection files, String toFile) throws IOException {
         StringBuilder sb = new StringBuilder();
         files.forEach(f ->
-            sb.append(f.getName()).append(" ")
+                sb.append(f.getName()).append(" ")
         );
         Manifest manifest = new Manifest();
         Attributes attr = manifest.getMainAttributes();
@@ -115,40 +106,137 @@ public class LauncherTask extends DefaultTask {
     private void lagKlientinstallereForNedlasting() {
         ArtifakterExtension a = getArtifakter();
         a.getWindows().execute(
-            toAbsolutePath("build/launcher/packr/windows"),
-            toAbsolutePath("build/launcher/war/download")
+                toAbsolutePath("build/launcher/packr/windows"),
+                toAbsolutePath("build/launcher/war/download")
         );
         a.getLinux().execute(
-            toAbsolutePath("build/launcher/packr/linux"),
-            toAbsolutePath("build/launcher/war/download")
+                toAbsolutePath("build/launcher/packr/linux"),
+                toAbsolutePath("build/launcher/war/download")
         );
         a.getOSX().execute(
-            toAbsolutePath("build/launcher/packr/osx"),
-            toAbsolutePath("build/launcher/war/download")
+                toAbsolutePath("build/launcher/packr/osx"),
+                toAbsolutePath("build/launcher/war/download")
         );
+    }
+
+    private enum JVM {
+        WINDOWS(
+                "windows",
+                "openjdk-12_windows-x64_bin.zip",
+                "jdk-12/jmods"
+        ),
+        LINUX(
+                "linux",
+                "openjdk-12_linux-x64_bin.tar.gz",
+                "jdk-12/jmods"
+        ),
+        OSX(
+                "osx",
+                "openjdk-12_osx-x64_bin.tar.gz",
+                "jdk-12.jdk/Contents/Home/jmods"
+        );
+
+        private final String alias;
+        private final String artifact;
+        private final String jmodsPath;
+
+        JVM(String alias, String artifact, String jmodsPath) {
+            this.alias = alias;
+            this.artifact = artifact;
+            this.jmodsPath = jmodsPath;
+        }
+
+        boolean isZip() {
+            return artifact.endsWith(".zip");
+        }
+
+        boolean isTarGz() {
+            return artifact.endsWith(".tar.gz");
+        }
+    }
+
+    private PackrConfig.Platform toPackrPlatform(JVM jvm) {
+        return jvm == JVM.LINUX ? PackrConfig.Platform.Linux64
+                : jvm == JVM.OSX ? PackrConfig.Platform.MacOS
+                : PackrConfig.Platform.Windows64;
+    }
+
+    private String toWorkDir(String alias) {
+        if ("osx" .equals(alias)) {
+            return "osx/Contents/Resources/work";
+        }
+        return alias + "/work";
+    }
+
+    private void unpack(JVM jvm, String dir) throws IOException {
+        String source = dir + "/" + jvm.artifact;
+        String destination = dir + "/" + jvm.alias;
+        if (jvm.isZip()) {
+            unzip(source, destination);
+        } else if (jvm.isTarGz()) {
+            untargz(source, destination);
+        } else {
+            throw new RuntimeException("Unknown artifact compression method: " + jvm.artifact);
+        }
+    }
+
+    private void jlink(JVM jvm, String dir) throws IOException {
+        Path source = toAbsolutePath(dir).resolve(jvm.alias);
+        Path destination = toAbsolutePath(dir).resolve(jvm.alias + "-min").resolve("jre");
+        String programnavn = isCurrentlyRunningWindows() ? "jlink.exe" : "jlink";
+        Path p = Path.of(System.getProperty("java.home"), "bin", programnavn);
+        String cmd = p.toString()
+                + " --module-path " + jvm.jmodsPath
+                + " --add-modules " + String.join(",", getJvm().getModules())
+                + " --include-locales " + String.join(",", getJvm().getLocales())
+                + " --output " + destination;
+        System.out.println("jlink cwd=" + source.toFile());
+        System.out.println("jlink cmd=" + cmd);
+        Process prosess = Runtime.getRuntime().exec(cmd, null, source.toFile());
+        try {
+            prosess.waitFor();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        System.out.println(streamToString(prosess.getInputStream()));
+        System.err.println(streamToString(prosess.getErrorStream()));
+    }
+
+    private String streamToString(InputStream is) throws IOException {
+        ByteArrayOutputStream result = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        int length;
+        while ((length = is.read(buffer)) != -1) {
+            result.write(buffer, 0, length);
+        }
+        return result.toString(StandardCharsets.UTF_8);
+    }
+
+    private boolean isCurrentlyRunningWindows() {
+        return System.getProperty("os.name").toLowerCase(Locale.US).contains("windows");
     }
 
     private void lagKlienter() throws IOException {
-        packr(PackrConfig.Platform.Windows64, "windows");
-        packr(PackrConfig.Platform.Linux64, "linux");
-        packr(PackrConfig.Platform.MacOS, "osx");
+        packr(JVM.WINDOWS);
+        packr(JVM.LINUX);
+        packr(JVM.OSX);
     }
 
-    private void packr(PackrConfig.Platform platform, String alias) throws IOException {
-        String jdk = "jdk-" + JDK_VERSION + "-" + alias;
+    private void packr(JVM jvm) throws IOException {
         copyResources("lib/client", "build/launcher/lib/");
-        copyResource("jdk/" + jdk + ".zip", "build/launcher/jdk/");
-        unzip("build/launcher/jdk/" + jdk + ".zip", "build/launcher/jdk/");
+        copyResource("jdk/" + jvm.artifact, "build/launcher/jdk/");
+        unpack(jvm, "build/launcher/jdk");
+        jlink(jvm, "build/launcher/jdk");
         try {
             PackrConfig config = new PackrConfig();
-            config.platform = platform;
+            config.platform = toPackrPlatform(jvm);
             config.executable = utvidelse().getExecutable();
             config.mainClass = "no.statkart.launcher.client.Wrapper";
-            config.cacheJre = toAbsolutePath("build/launcher/jdk/" + jdk).toFile();
-            config.outDir = toAbsolutePath("build/launcher/packr/" + alias).toFile();
+            config.cacheJre = toAbsolutePath("build/launcher/jdk/" + jvm.alias + "-min").toFile();
+            config.outDir = toAbsolutePath("build/launcher/packr/" + jvm.alias).toFile();
             config.classpath = Files.list(toAbsolutePath("build/launcher/lib"))
-                .map(Path::toString)
-                .collect(Collectors.toList());
+                    .map(Path::toString)
+                    .collect(Collectors.toList());
             String icons = utvidelse().getIcons();
             if (icons != null) {
                 config.iconResource = new File(utvidelse().getIcons());
@@ -159,10 +247,7 @@ public class LauncherTask extends DefaultTask {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        if ("osx".equals(alias)) {
-            alias = "osx/Contents/Resources";
-        }
-        copy(getGetdown().getClient(), "build/launcher/packr/" + alias + "/work");
+        copy(getGetdown().getClient(), "build/launcher/packr/" + toWorkDir(jvm.alias));
     }
 
     private void copy(FileCollection files, String toDir) {
@@ -242,7 +327,7 @@ public class LauncherTask extends DefaultTask {
         Path outputDirPath = toAbsolutePath(toDir);
         try (FileSystem zipFs = FileSystems.newFileSystem(inputPath, null)) {
             Path zipRoot = zipFs.getPath("/");
-            Files.walkFileTree(zipRoot, new SimpleFileVisitor<Path>() {
+            Files.walkFileTree(zipRoot, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     Path target = outputDirPath.resolve(zipRoot.relativize(file).toString());
@@ -254,12 +339,36 @@ public class LauncherTask extends DefaultTask {
         }
     }
 
-    private ArtifakterExtension getArtifakter() {
-        return utvidelse().getArtifakterUtvidelse();
+    private void untargz(String targzFile, String toDir) throws IOException {
+        Path inputPath = toAbsolutePath(targzFile);
+        Path outputDirPath = toAbsolutePath(toDir);
+        try (FileInputStream fileInputStream = new FileInputStream(inputPath.toFile());
+             BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+             GzipCompressorInputStream gzipInputStream = new GzipCompressorInputStream(bufferedInputStream);
+             TarArchiveInputStream tarArchiveInputStream = new TarArchiveInputStream(gzipInputStream)) {
+            TarArchiveEntry entry;
+            while ((entry = tarArchiveInputStream.getNextTarEntry()) != null) {
+                Path path = outputDirPath.resolve(entry.getName());
+                if (entry.isDirectory()) {
+                    Files.createDirectories(path);
+                } else {
+                    Files.createDirectories(path.getParent());
+                    Files.copy(tarArchiveInputStream, path, StandardCopyOption.REPLACE_EXISTING);
+                }
+            }
+        }
+    }
+
+    private JvmExtension getJvm() {
+        return utvidelse().getJvmUtvidelse();
     }
 
     private GetdownExtension getGetdown() {
         return utvidelse().getGetdownUtvidelse();
+    }
+
+    private ArtifakterExtension getArtifakter() {
+        return utvidelse().getArtifakterUtvidelse();
     }
 
     private LauncherExtension utvidelse() {
