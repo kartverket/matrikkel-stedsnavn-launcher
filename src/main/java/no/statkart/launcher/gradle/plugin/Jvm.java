@@ -16,18 +16,18 @@ import java.util.Locale;
 enum Jvm {
     WINDOWS(
             "windows",
-            "openjdk-12_windows-x64_bin.zip",
-            "jdk-12/jmods"
+            "openjdk-13_windows-x64_bin.zip",
+            "jdk-13/jmods"
     ),
     LINUX(
             "linux",
-            "openjdk-12_linux-x64_bin.tar.gz",
-            "jdk-12/jmods"
+            "openjdk-13_linux-x64_bin.tar.gz",
+            "jdk-13/jmods"
     ),
     OSX(
             "osx",
-            "openjdk-12_osx-x64_bin.tar.gz",
-            "jdk-12.jdk/Contents/Home/jmods"
+            "openjdk-13_osx-x64_bin.tar.gz",
+            "jdk-13.jdk/Contents/Home/jmods"
     );
 
     private final String alias;
@@ -75,7 +75,7 @@ enum Jvm {
     }
 
     private void unzip(Path inputPath, Path outputDirPath) throws IOException {
-        try (FileSystem zipFs = FileSystems.newFileSystem(inputPath, null)) {
+        try (FileSystem zipFs = FileSystems.newFileSystem(inputPath, (ClassLoader) null)) {
             Path zipRoot = zipFs.getPath("/");
             Files.walkFileTree(zipRoot, new SimpleFileVisitor<>() {
                 @Override

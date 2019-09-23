@@ -82,9 +82,10 @@ public class SevenZExtension implements PackagingExtension {
                     sevenZOutputFile.putArchiveEntry(entry);
                     int count;
                     byte[] b = new byte[1024];
-                    InputStream is = Files.newInputStream(file);
-                    while ((count = is.read(b)) > 0) {
-                        sevenZOutputFile.write(b, 0, count);
+                    try (InputStream is = Files.newInputStream(file)) {
+                        while ((count = is.read(b)) > 0) {
+                            sevenZOutputFile.write(b, 0, count);
+                        }
                     }
                     sevenZOutputFile.closeArchiveEntry();
                     return FileVisitResult.CONTINUE;

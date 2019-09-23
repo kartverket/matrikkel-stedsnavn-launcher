@@ -60,6 +60,9 @@ public class BootstrapGetdownServlet extends HttpServlet {
         return (String s) -> s.replace("@@url@@", getURL());
     }
 
+    /**
+     * Lukker streams for {@literal input} og {@literal output}
+     */
     private static void streamCopy(InputStream input, OutputStream output, Function<String, String> function) throws IOException {
         try (BufferedReader br = new BufferedReader(new InputStreamReader(input));
              BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(output))) {
