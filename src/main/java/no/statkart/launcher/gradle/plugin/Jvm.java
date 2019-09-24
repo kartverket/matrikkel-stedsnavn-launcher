@@ -16,18 +16,18 @@ import java.util.Locale;
 enum Jvm {
     WINDOWS(
             "windows",
-            "openjdk-13_windows-x64_bin.zip",
-            "jdk-13/jmods"
+            "openjdk-12_windows-x64_bin.zip",
+            "jdk-12/jmods"
     ),
     LINUX(
             "linux",
-            "openjdk-13_linux-x64_bin.tar.gz",
-            "jdk-13/jmods"
+            "openjdk-12_linux-x64_bin.tar.gz",
+            "jdk-12/jmods"
     ),
     OSX(
             "osx",
-            "openjdk-13_osx-x64_bin.tar.gz",
-            "jdk-13.jdk/Contents/Home/jmods"
+            "openjdk-12_osx-x64_bin.tar.gz",
+            "jdk-12.jdk/Contents/Home/jmods"
     );
 
     private final String alias;
