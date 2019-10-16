@@ -53,6 +53,11 @@ public class LauncherTask extends DefaultTask {
         opprettPathingJar(utvidelse().getClasspath(), "build/launcher/war/vault/client-dependencies.jar");
         copy(utvidelse().getClasspath(), "build/launcher/war/vault");
         copy(utvidelse().getWebinf(), "build/launcher/war/WEB-INF");
+        copy(utvidelse().getMetainf(), "build/launcher/war/META-INF");
+        String version = (String) getProject().getProperties().get("version");
+        if (version != null && !version.isEmpty()) {
+            replace("build/launcher/war/META-INF/MANIFEST.MF", "@@version@@", version);
+        }
         copyResources("lib/server", "build/launcher/war/WEB-INF/lib");
         copy(utvidelse().getWebinfLibs(), "build/launcher/war/WEB-INF/lib");
         copy(utvidelse().getGetdownUtvidelse().getServer(), "build/launcher/war/vault");
@@ -70,10 +75,12 @@ public class LauncherTask extends DefaultTask {
 
     private void replace(String file, String token, String replacement) throws IOException {
         Path filePath = toAbsolutePath(file);
-        Charset charset = StandardCharsets.UTF_8;
-        String content = Files.readString(filePath, charset);
-        content = content.replace(token, replacement);
-        Files.writeString(filePath, content, charset);
+        if (Files.exists(filePath)) {
+            Charset charset = StandardCharsets.UTF_8;
+            String content = Files.readString(filePath, charset);
+            content = content.replace(token, replacement);
+            Files.writeString(filePath, content, charset);
+        }
     }
 
     private void opprettPathingJar(FileCollection files, String toFile) throws IOException {

@@ -9,6 +9,7 @@ public class LauncherExtension {
     private FileCollection classpath;
     private String executable;
     private String webinf;
+    private String metainf;
     private FileCollection webinfLibs;
     private String icons;
 
@@ -32,6 +33,12 @@ public class LauncherExtension {
     @SuppressWarnings("unused")
     public void webinf(String webinf) {
         this.webinf = webinf;
+    }
+
+    // Kalles vha refleksjon av gradle
+    @SuppressWarnings("unused")
+    public void metainf(String metainf) {
+        this.metainf = metainf;
     }
 
     // Kalles vha refleksjon av gradle
@@ -77,6 +84,10 @@ public class LauncherExtension {
 
     String getWebinf() {
         return webinf;
+    }
+
+    String getMetainf() {
+        return metainf;
     }
 
     FileCollection getWebinfLibs() {
