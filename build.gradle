@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'no.statkart.launcher'
-version = '1.2'
+version = launcher_version
 
 // Launcheren skal kompileres med og kjøres av denne java-versjonen.
 // Klienten som launcheren starter opp skal kjøres av denne java-versjonen.
