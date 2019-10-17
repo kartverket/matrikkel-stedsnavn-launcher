@@ -3,15 +3,15 @@ plugins {
     id 'maven-publish'
 }
 
-group = 'no.statkart.launcher'
-version = launcher_version
-
 // Launcheren skal kompileres med og kjøres av denne java-versjonen.
 // Klienten som launcheren starter opp skal kjøres av denne java-versjonen.
 sourceCompatibility = JavaVersion.VERSION_12
 
 apply from: 'gradle/defaultBuildProperties.gradle'
 apply from: 'gradle/libraries.gradle'
+
+group = 'no.statkart.launcher'
+version = launcher_version
 
 repositories {
     mavenLocal()
