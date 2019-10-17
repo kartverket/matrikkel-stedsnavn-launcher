@@ -82,18 +82,25 @@ task serverJarDependencies(type: Copy) {
     into 'build/server/lib'
 }
 
+task downloadWindowsJdk { doLast { downloadJdk(jdk_windows_url) } }
+task downloadLinuxJdk { doLast { downloadJdk(jdk_linux_url) } }
+task downloadOSXJdk { doLast { downloadJdk(jdk_osx_url) } }
+
 jar {
     dependsOn clientJar
     dependsOn serverJar
     dependsOn clientJarDependencies
     dependsOn serverJarDependencies
+    dependsOn downloadWindowsJdk
+    dependsOn downloadLinuxJdk
+    dependsOn downloadOSXJdk
     from {
         // Pluginen trenger denne, men den ligger ikke i maven
         zipTree(file('lib/packr-2.0-SNAPSHOT.jar'))
     }
     into('jdk') {
+        from('build/jdk')
         from('jdk') {
-            include 'openjdk-*'
             include 'fonts/*'
         }
     }
@@ -105,6 +112,18 @@ jar {
                 'Implementation-Version': archiveVersion.get()
         )
     }
+}
+
+static void downloadJdk(String url) {
+    new File('build/jdk/').mkdirs()
+    def f = new File('build/jdk/' + urlTilFilnavn(url))
+    if (!f.exists()) {
+        new URL(url).withInputStream { i -> f.withOutputStream { it << i } }
+    }
+}
+
+static String urlTilFilnavn(String url) {
+    return java.nio.file.Paths.get(new URL(url).getPath()).getFileName().toString()
 }
 
 publishing {

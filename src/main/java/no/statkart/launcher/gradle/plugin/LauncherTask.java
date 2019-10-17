@@ -13,6 +13,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileAttribute;
 import java.util.*;
 import java.util.jar.*;
 import java.util.stream.Collectors;
@@ -95,6 +96,7 @@ public class LauncherTask extends DefaultTask {
 
         Path toFilePath = toAbsolutePath(toFile);
         Files.createDirectories(toFilePath.getParent());
+        Files.deleteIfExists(toFilePath);
         Files.createFile(toFilePath);
         try (FileOutputStream fos = new FileOutputStream(toFilePath.toFile());
              JarOutputStream jos = new JarOutputStream(fos);
@@ -130,14 +132,14 @@ public class LauncherTask extends DefaultTask {
     }
 
     private void lagKlienter() throws IOException {
+        copyResources("lib/client", "build/launcher/lib/");
+        copyResources("jdk", "build/launcher/jdk/");
         packr(Jvm.WINDOWS);
         packr(Jvm.LINUX);
         packr(Jvm.OSX);
     }
 
     private void packr(Jvm jvm) throws IOException {
-        copyResources("lib/client", "build/launcher/lib/");
-        copyResource("jdk/" + jvm.getArtifact(), "build/launcher/jdk/");
         jvm.unpack(toAbsolutePath("build/launcher/jdk"));
         jvm.jlink(
                 toAbsolutePath("build/launcher/jdk"),
@@ -151,9 +153,9 @@ public class LauncherTask extends DefaultTask {
             config.mainClass = "no.statkart.launcher.client.Wrapper";
             config.cacheJre = toAbsolutePath("build/launcher/jdk/" + jvm.getAlias() + "-min").toFile();
             config.outDir = toAbsolutePath("build/launcher/packr/" + jvm.getAlias()).toFile();
-            config.classpath = Files.list(toAbsolutePath("build/launcher/lib"))
-                    .map(Path::toString)
-                    .collect(Collectors.toList());
+            try (Stream<Path> paths = Files.list(toAbsolutePath("build/launcher/lib"))) {
+                config.classpath = paths.map(Path::toString).collect(Collectors.toList());
+            }
             String icons = utvidelse().getIcons();
             if (icons != null) {
                 config.iconResource = toAbsolutePath(utvidelse().getIcons()).toFile();

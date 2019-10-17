@@ -1,0 +1,31 @@
+pipeline {
+    agent any
+    tools {
+        jdk 'Java 12 Latest'
+    }
+    environment {
+        options = "--refresh-dependencies " +
+                "-Dmaven.repo.local=${WORKSPACE}/.m2/repository " +
+                "-Dorg.gradle.daemon=false"
+    }
+    options {
+        timestamps()
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        disableConcurrentBuilds()
+    }
+
+    stages {
+        stage('Prepare launcher') {
+            steps {
+                bat "gradlew.bat clean"
+            }
+        }
+
+        stage('Build launcher') {
+            steps {
+                bat "gradlew.bat assemble"
+            }
+        }
+    }
+
+}

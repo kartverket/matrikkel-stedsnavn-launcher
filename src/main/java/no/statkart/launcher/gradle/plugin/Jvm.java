@@ -5,47 +5,37 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
-import java.nio.file.*;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Stream;
 
 enum Jvm {
-    WINDOWS(
-            "windows",
-            "openjdk-12_windows-x64_bin.zip",
-            "jdk-12/jmods"
-    ),
-    LINUX(
-            "linux",
-            "openjdk-12_linux-x64_bin.tar.gz",
-            "jdk-12/jmods"
-    ),
-    OSX(
-            "osx",
-            "openjdk-12_osx-x64_bin.tar.gz",
-            "jdk-12.jdk/Contents/Home/jmods"
-    );
+    WINDOWS("windows"),
+    LINUX("linux"),
+    OSX("osx");
 
     private final String alias;
-    private final String artifact;
-    private final String jmodsPath;
 
-    Jvm(String alias, String artifact, String jmodsPath) {
+    Jvm(String alias) {
         this.alias = alias;
-        this.artifact = artifact;
-        this.jmodsPath = jmodsPath;
     }
 
     String getAlias() {
         return alias;
-    }
-
-    String getArtifact() {
-        return artifact;
     }
 
     PackrConfig.Platform toPackrPlatform() {
@@ -54,23 +44,72 @@ enum Jvm {
                 : PackrConfig.Platform.Windows64;
     }
 
-    private boolean isZip() {
-        return artifact.endsWith(".zip");
-    }
-
-    private boolean isTarGz() {
-        return artifact.endsWith(".tar.gz");
-    }
-
     void unpack(Path dir) throws IOException {
-        Path source = dir.resolve(artifact);
+        Path source = getArtifact(dir);
         Path destination = dir.resolve(alias);
-        if (isZip()) {
+        if (Files.exists(destination)) {
+            return;
+        }
+        if (isZip(source)) {
             unzip(source, destination);
-        } else if (isTarGz()) {
+        } else if (isTarGz(source)) {
             untargz(source, destination);
         } else {
-            throw new RuntimeException("Unknown artifact compression method: " + artifact);
+            throw new RuntimeException("Unknown artifact compression method: " + source);
+        }
+    }
+
+    void jlink(Path dir, List<String> modules, List<String> locales) throws IOException {
+        Path source = dir.resolve(alias);
+        Path destination = dir.resolve(alias + "-min").resolve("jre");
+        if (Files.exists(destination)) {
+            return;
+        }
+        String programnavn = isCurrentlyRunningWindows() ? "jlink.exe" : "jlink";
+        Path p = Path.of(System.getProperty("java.home"), "bin", programnavn);
+        String cmd = p.toString()
+                + " --module-path " + getJModsDirectory(source)
+                + " --add-modules " + String.join(",", modules)
+                + " --include-locales " + String.join(",", locales)
+                + " --output " + destination;
+        // System.out.println("jlink cwd=" + source.toFile());
+        // System.out.println("jlink cmd=" + cmd);
+        Process prosess = Runtime.getRuntime().exec(cmd, null, source.toFile());
+        try {
+            prosess.waitFor();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        String stdout = streamToString(prosess.getInputStream());
+        if (!stdout.isEmpty()) {
+            System.out.println(stdout);
+        }
+        String stderr = streamToString(prosess.getErrorStream());
+        if (!stderr.isEmpty()) {
+            System.err.println(stderr);
+        }
+    }
+
+    private boolean isZip(Path path) {
+        return path.getFileName().toString().endsWith(".zip");
+    }
+
+    private boolean isTarGz(Path path) {
+        return path.getFileName().toString().endsWith(".tar.gz");
+    }
+
+    private Path getArtifact(Path dir) throws IOException {
+        String regex = "^.*[^a-zA-Z0-9]" + alias + "[^a-zA-Z0-9].*$";
+        try (Stream<Path> paths = Files.walk(dir, 1)) {
+            return paths.filter(path -> path.getFileName().toString().matches(regex))
+                    .findFirst().orElseThrow();
+        }
+    }
+
+    private Path getJModsDirectory(Path dir) throws IOException {
+        try (Stream<Path> paths = Files.walk(dir)) {
+            return paths.filter(path -> Files.isDirectory(path) && path.getFileName().toString().equals("jmods"))
+                    .findFirst().orElseThrow();
         }
     }
 
@@ -104,34 +143,6 @@ enum Jvm {
                     Files.copy(tarArchiveInputStream, path, StandardCopyOption.REPLACE_EXISTING);
                 }
             }
-        }
-    }
-
-    void jlink(Path dir, List<String> modules, List<String> locales) throws IOException {
-        Path source = dir.resolve(alias);
-        Path destination = dir.resolve(alias + "-min").resolve("jre");
-        String programnavn = isCurrentlyRunningWindows() ? "jlink.exe" : "jlink";
-        Path p = Path.of(System.getProperty("java.home"), "bin", programnavn);
-        String cmd = p.toString()
-                + " --module-path " + jmodsPath
-                + " --add-modules " + String.join(",", modules)
-                + " --include-locales " + String.join(",", locales)
-                + " --output " + destination;
-//        System.out.println("jlink cwd=" + source.toFile());
-//        System.out.println("jlink cmd=" + cmd);
-        Process prosess = Runtime.getRuntime().exec(cmd, null, source.toFile());
-        try {
-            prosess.waitFor();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        String stdout = streamToString(prosess.getInputStream());
-        if (!stdout.isEmpty()) {
-            System.out.println(stdout);
-        }
-        String stderr = streamToString(prosess.getErrorStream());
-        if (!stderr.isEmpty()) {
-            System.err.println(stderr);
         }
     }
 

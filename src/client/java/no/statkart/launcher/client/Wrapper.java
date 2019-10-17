@@ -21,6 +21,7 @@ import java.util.function.Function;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Klasse som wrapper getdown:
@@ -121,12 +122,13 @@ public class Wrapper {
     }
 
     private static Map<URL, Long> tilURLAccessTimes(Path rot) throws IOException {
-        return Files.walk(rot)
-                .filter(f -> f.endsWith("touch.txt"))
-                .map(Wrapper::tilURLAccessTime)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        try (Stream<Path> paths = Files.walk(rot)) {
+            return paths.filter(f -> f.endsWith("touch.txt"))
+                    .map(Wrapper::tilURLAccessTime)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        }
     }
 
     private static Optional<Map.Entry<URL, Long>> tilURLAccessTime(Path touch) {
@@ -208,7 +210,9 @@ public class Wrapper {
                 ("" + System.currentTimeMillis()).getBytes(),
                 StandardOpenOption.CREATE
         );
-        Files.walk(source).forEach(fil -> kopierMenIkkeOverskriv(source, fil, destination, url));
+        try (Stream<Path> paths = Files.walk(source)) {
+            paths.forEach(fil -> kopierMenIkkeOverskriv(source, fil, destination, url));
+        }
         return destination.toString();
     }
 
