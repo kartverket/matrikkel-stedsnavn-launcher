@@ -1,11 +1,8 @@
 plugins {
     id 'java-library'
+    id 'java-gradle-plugin'
     id 'maven-publish'
 }
-
-// Launcheren skal kompileres med og kjøres av denne java-versjonen.
-// Klienten som launcheren starter opp skal kjøres av denne java-versjonen.
-sourceCompatibility = JavaVersion.VERSION_12
 
 apply from: 'gradle/defaultBuildProperties.gradle'
 apply from: 'gradle/libraries.gradle'
@@ -25,13 +22,6 @@ sourceSets {
     server
 }
 
-// Server-kildekoden skal deployes i en servlet-container.
-// For Kartverket betyr dette per i dag weblogic - som kjører på java 1.8.
-compileServerJava {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
 dependencies {
     clientImplementation libraries.getdown_launcher
     serverImplementation libraries.getdown_core
@@ -42,9 +32,21 @@ dependencies {
     api libraries.jsign
     api libraries.seven_z
 
-    implementation gradleApi()
     implementation files('lib/packr-2.0-SNAPSHOT.jar')
 }
+
+gradlePlugin {
+    plugins {
+        launcherPlugin {
+            id = 'no.statkart.launcher'
+            implementationClass = 'no.statkart.launcher.gradle.plugin.LauncherPlugin'
+        }
+    }
+}
+
+// Minimumskrav til gradle byggesystemet dette pluginet brukes i.
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
 
 task clientJar(type: Jar) {
     archiveName "launcher-client-${archiveVersion.get()}.jar"
@@ -58,6 +60,13 @@ task clientJar(type: Jar) {
     }
 }
 
+// Klienten som launcheren starter opp trenger denne java-versjonen.
+compileClientJava {
+    sourceCompatibility = JavaVersion.VERSION_12
+    targetCompatibility = JavaVersion.VERSION_12
+}
+
+
 task serverJar(type: Jar) {
     archiveName "launcher-server-${archiveVersion.get()}.jar"
     from sourceSets.server.output
@@ -70,67 +79,59 @@ task serverJar(type: Jar) {
     }
 }
 
-task clientJarDependencies(type: Copy) {
-    dependsOn configurations.clientRuntimeClasspath
-    from configurations.clientRuntimeClasspath
-    into 'build/client/lib'
+// Server-kildekoden skal deployes i en servlet-container.
+// For Kartverket betyr dette per i dag weblogic - som kjører på java 1.8.
+compileServerJava {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-task serverJarDependencies(type: Copy) {
-    dependsOn configurations.serverRuntimeClasspath
-    from configurations.serverRuntimeClasspath
-    into 'build/server/lib'
-}
 
-task downloadWindowsJdk { doLast { downloadJdk(jdk_windows_url) } }
-task downloadLinuxJdk { doLast { downloadJdk(jdk_linux_url) } }
-task downloadOSXJdk { doLast { downloadJdk(jdk_osx_url) } }
+tasks.create('downloadWindowsJdk', DownloadJdk, jdk_windows_url)
+tasks.create('downloadLinuxJdk', DownloadJdk, jdk_linux_url)
+tasks.create('downloadOSXJdk', DownloadJdk, jdk_osx_url)
 
 jar {
-    dependsOn clientJar
-    dependsOn serverJar
-    dependsOn clientJarDependencies
-    dependsOn serverJarDependencies
-    dependsOn downloadWindowsJdk
-    dependsOn downloadLinuxJdk
-    dependsOn downloadOSXJdk
     from {
         // Pluginen trenger denne, men den ligger ikke i maven
         zipTree(file('lib/packr-2.0-SNAPSHOT.jar'))
     }
     into('jdk') {
-        from('build/jdk')
+        from(downloadWindowsJdk)
+        from(downloadLinuxJdk)
+        from(downloadOSXJdk)
         from('jdk') {
             include 'fonts/*'
         }
     }
-    into('lib/client') { from('build/client/lib') }
-    into('lib/server') { from('build/server/lib') }
+    into('lib/client') {
+        from(clientJar)
+        from(configurations.clientRuntimeClasspath)
+    }
+    into('lib/server') {
+        from(serverJar)
+        from(configurations.serverRuntimeClasspath)
+    }
     manifest {
         attributes(
                 'Implementation-Title': 'Kartverkets launcher',
-                'Implementation-Version': archiveVersion.get()
+                'Implementation-Version': archiveVersion.get(),
+                'windows-jdk-image': jdk_windows_url,
+                'linux-jdk-image': jdk_linux_url,
+                'osx-jdk-image': jdk_osx_url,
         )
     }
 }
 
-static void downloadJdk(String url) {
-    new File('build/jdk/').mkdirs()
-    def f = new File('build/jdk/' + urlTilFilnavn(url))
-    if (!f.exists()) {
-        new URL(url).withInputStream { i -> f.withOutputStream { it << i } }
-    }
+task sourceJar(type: Jar) {
+    from sourceSets.main.allSource
+    classifier "sources"
 }
 
-static String urlTilFilnavn(String url) {
-    return java.nio.file.Paths.get(new URL(url).getPath()).getFileName().toString()
-}
 
 publishing {
-    publications {
-        artifakt(MavenPublication) {
-            from components.java
-        }
+    publications.all {
+        if (it.name == 'pluginMaven') artifact sourceJar
     }
     repositories {
         String mavenUpload = System.getenv('MAVEN_PUBLISH')

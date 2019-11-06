@@ -1,22 +1,19 @@
 # Plugin for gradle
 
-Dette prosjektet lager en plugin for gradle.  Denne pluginen oppretter deretter installere for windows, linux og osx 64-bits.
+Dette prosjektet lager en plugin til Gradle. Denne pluginen oppretter deretter installere for Windows, Linux og OSX 64-bits.
 Etter at installasjonen er fullført, kan man starte en binærfil som viser en login-dialog.
-Denne dialogen oppretter kontakt med en webserver som sjekker bruker og passord.  Dersom dette er korrekt, laster startprogrammet
+Denne dialogen oppretter kontakt med en webserver som sjekker bruker og passord. Dersom dette er korrekt, laster startprogrammet
 ned en klient som deretter startes.
 
 # Eksempel på bruk fra matrikkelklientens build.xml:
 ```
 import org.apache.commons.compress.archivers.sevenz.SevenZMethod
 
-buildscript {
-    dependencies {
-        classpath files('launcher/lib')
-        classpath 'no.statkart.launcher:launcher:1.2'
-    }
+plugins {
+    id 'no.statkart.launcher' version '1.2.2'
 }
-apply plugin: 'no.statkart.launcher'
-def launcherVersion = '1.2'
+
+def launcherVersion = matrikkel_klient_versjon
 
 def keystore = rootProject.file(System.getenv('keystore') ?: 'launcher/keystore/selfsign.p12') as String
 def keystore_alias = System.getenv('keystore_alias') ?: 'selfsign'
