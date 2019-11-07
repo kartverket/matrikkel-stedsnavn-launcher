@@ -31,8 +31,6 @@ dependencies {
     api libraries.commons_compress
     api libraries.jsign
     api libraries.seven_z
-
-    implementation files('lib/packr-2.0-SNAPSHOT.jar')
 }
 
 gradlePlugin {
@@ -92,9 +90,9 @@ tasks.create('downloadLinuxJdk', DownloadJdk, jdk_linux_url)
 tasks.create('downloadOSXJdk', DownloadJdk, jdk_osx_url)
 
 jar {
-    from {
-        // Pluginen trenger denne, men den ligger ikke i maven
-        zipTree(file('lib/packr-2.0-SNAPSHOT.jar'))
+    // Pluginen trenger denne, men den ligger pt ikke i maven
+    into('lib/packr') {
+        from 'lib/packr-2.0-SNAPSHOT.jar'
     }
     into('jdk') {
         from(downloadWindowsJdk)

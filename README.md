@@ -13,7 +13,11 @@ plugins {
     id 'no.statkart.launcher' version '1.2.2'
 }
 
-def launcherVersion = matrikkel_klient_versjon
+/**
+ * Denne verdien endres når sluttbruker må re-installere klienten.
+ * Typisk er dette når man oppdaterer java-vm'en til klienten, eller oppgradere getdown/packr/loginvinduet osv.
+ */
+ext.launcherVersion = '1.0'
 
 def keystore = rootProject.file(System.getenv('keystore') ?: 'launcher/keystore/selfsign.p12') as String
 def keystore_alias = System.getenv('keystore_alias') ?: 'selfsign'
@@ -28,13 +32,14 @@ launcher {
         client 'launcher/getdown/client'
         server 'launcher/getdown/server'
     }
-    classpath configurations.runtime + project.files("build/libs/${rootProject.name}-${version}.jar")
+    classpath configurations.runtime, tasks.jar
     executable 'matrikkelklient'
     metainf 'launcher/metainf'
     webinf 'launcher/webinf'
-    webinfLibs configurations.serverRuntime + project.files("build/libs/matrikkelklient-server-${matrikkel_klient_versjon}.jar")
+    webinfLibs configurations.serverRuntime, tasks.serverJar
 
     icons 'launcher/icons/program.icns'
+    windowsIcons 'launcher/lib'
     artifakter {
         windows {
             output "Matrikkelklient-${launcherVersion}-installer.exe"

@@ -1,6 +1,5 @@
 package no.statkart.launcher.gradle.plugin;
 
-import com.badlogicgames.packr.PackrConfig;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
@@ -36,12 +35,6 @@ enum Jvm {
 
     String getAlias() {
         return alias;
-    }
-
-    PackrConfig.Platform toPackrPlatform() {
-        return this == Jvm.LINUX ? PackrConfig.Platform.Linux64
-                : this == Jvm.OSX ? PackrConfig.Platform.MacOS
-                : PackrConfig.Platform.Windows64;
     }
 
     void unpack(Path dir) throws IOException {
