@@ -8,7 +8,7 @@ public class LauncherPlugin implements Plugin<Project> {
     @Override
     public void apply(Project project) {
         // Navn på blokken som konfigurerer denne pluginen i gradle-fila
-        project.getExtensions().create("launcher", LauncherExtension.class);
+        project.getExtensions().create("launcher", LauncherExtension.class, project);
         // Navn på tasken som kjører denne pluginen
         project.getTasks().create("launcher", LauncherTask.class);
     }
