@@ -1,6 +1,5 @@
 package no.statkart.launcher.client;
 
-import java.io.IOException;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
 import java.net.URL;
@@ -17,39 +16,40 @@ class Login {
      * Dette betyr at klientartifaktene som ligger bak
      * BASIC AUTH kan lastes ned av getdown.
      */
-    static Credentials innhentGyldigTjenerOgBrukernavnOgPassord(String tittel, List<URL> tjenere) {
+    static LoginParametre innhentGyldigeLoginParametre(String tittel, List<LoginParametre> tidligereLoginParametre) {
         String versjon = Login.class.getPackage().getImplementationVersion();
-        Credentials gyldigCredentials;
+        LoginParametre gyldigeLoginParametre;
         Feil feil = null;
         do {
-            Optional<Credentials> credentials = new LoginDialog()
+            Optional<LoginParametre> loginParametre = new LoginDialog()
                     .medTittel(tittel)
                     .medVersjon(versjon)
                     .medTidligereFeil(feil)
-                    .medForslagTilTjenere(tjenere)
-                    .innhentTjenerOgBrukernavnOgPassord();
-            if (credentials.isEmpty()) {
+                    .medTidligereLoginParametre(tidligereLoginParametre)
+                    .innhentLoginParametre();
+            if (loginParametre.isEmpty()) {
                 System.exit(0);
             }
-            String user = credentials.get().getUser();
-            String pass = credentials.get().getPass();
+            String user = loginParametre.get().getBrukernavn();
+            char[] pass = loginParametre.get().getPassord();
             Authenticator.setDefault(new Authenticator() {
                 protected PasswordAuthentication getPasswordAuthentication() {
-                    return new PasswordAuthentication(user, pass.toCharArray());
+                    return new PasswordAuthentication(user, pass);
                 }
             });
-            gyldigCredentials = credentials.get();
+            gyldigeLoginParametre = loginParametre.get();
             try {
-                URL tst = new URL(gyldigCredentials.getServer() + Konfigurasjon.get("tryCredentialsUsing"));
+                Integer.parseInt(gyldigeLoginParametre.getHeap());
+                URL tst = new URL(gyldigeLoginParametre.getTjener() + Konfigurasjon.get("tryCredentialsUsing"));
                 tst.openConnection().getInputStream();
-                loggInnIKlienten(gyldigCredentials);
+                loggInnIKlienten(gyldigeLoginParametre);
                 registrerLauncherVersjon(versjon);
-            } catch (IOException e) {
-                feil = new Feil(e, gyldigCredentials);
-                gyldigCredentials = null;
+            } catch (Exception e) {
+                feil = new Feil(e, gyldigeLoginParametre);
+                gyldigeLoginParametre = null;
             }
-        } while (gyldigCredentials == null);
-        return gyldigCredentials;
+        } while (gyldigeLoginParametre == null);
+        return gyldigeLoginParametre;
     }
 
     /**
@@ -59,9 +59,9 @@ class Login {
      * Dette fører til at passordet vil være synlig i prosesslista, men
      * denne informasjonen er transient.
      */
-    private static void loggInnIKlienten(Credentials credentials) {
-        System.setProperty("app.skif.server_username", credentials.getUser());
-        System.setProperty("app.skif.server_password", credentials.getPass());
+    private static void loggInnIKlienten(LoginParametre loginParametre) {
+        System.setProperty("app.skif.server_username", loginParametre.getBrukernavn());
+        System.setProperty("app.skif.server_password", String.copyValueOf(loginParametre.getPassord()));
     }
 
     /**

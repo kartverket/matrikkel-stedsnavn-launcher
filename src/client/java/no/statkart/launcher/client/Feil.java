@@ -2,7 +2,6 @@ package no.statkart.launcher.client;
 
 import javax.net.ssl.SSLException;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.net.ConnectException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -10,12 +9,12 @@ import java.net.UnknownHostException;
 
 class Feil {
 
-    private final IOException exception;
-    private final Credentials credentials;
+    private final Exception exception;
+    private final LoginParametre loginParametre;
 
-    Feil(IOException exception, Credentials credentials) {
+    Feil(Exception exception, LoginParametre loginParametre) {
         this.exception = exception;
-        this.credentials = credentials;
+        this.loginParametre = loginParametre;
     }
 
     boolean erTjenerfeil() {
@@ -27,18 +26,18 @@ class Feil {
         return !erTjenerfeil();
     }
 
-    Credentials getCredentials() {
-        return credentials;
+    LoginParametre getLoginParametre() {
+        return loginParametre;
     }
 
     String tilFeilmelding() {
         if (exception instanceof MalformedURLException) {
             return "Feil inntastet tjeneradresse. Skal være på formatet <protokoll>://<tjener>[:<port>]/";
         }
-        if (harSuffiks(credentials.getServer())) {
+        if (harSuffiks(loginParametre.getTjener())) {
             return "Feil inntastet tjeneradresse. Skal bare ha tjenernavn.";
         }
-        if (erUgyldigTjenerformat(credentials.getServer())) {
+        if (erUgyldigTjenerformat(loginParametre.getTjener())) {
             return "Feil inntastet tjeneradresse. Skal være på formatet <protokoll>://<tjener>[:<port>]/";
         }
         if (exception instanceof FileNotFoundException) {
@@ -51,15 +50,18 @@ class Feil {
                 || exception instanceof UnknownHostException) {
             return "Ikke kontakt med tjener, sjekk nettilkobling";
         }
+        if (exception instanceof NumberFormatException) {
+            return "Minnestørrelse må skrives inn som et heltall";
+        }
         return "Ugyldig brukernavn og/eller passord";
     }
 
     private boolean harSuffiks(String tjener) {
-       try {
-           return !"".equals(new URL(tjener).getPath().replaceFirst("/", ""));
-       } catch (MalformedURLException e) {
-           return true;
-       }
+        try {
+            return !"".equals(new URL(tjener).getPath().replaceFirst("/", ""));
+        } catch (MalformedURLException e) {
+            return true;
+        }
     }
 
     private boolean erUgyldigTjenerformat(String tjener) {

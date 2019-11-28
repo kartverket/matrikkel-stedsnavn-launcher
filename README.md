@@ -75,3 +75,4 @@ launcher {
     }
 }
 ```
+Kikk i de filene og mappene til matrikkelklienten som er referert over for å se hva som trengs av ekstra oppsett.

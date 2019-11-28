@@ -18,7 +18,7 @@ class Konfigurasjon {
     }
 
     private static Properties getProperties() {
-        Path propPath = Paths.get(Wrapper.WORK_SOURCE).resolve("client.properties");
+        Path propPath = Paths.get(Work.SOURCE).resolve("client.properties");
         if (!Files.exists(propPath)) {
             throw new IllegalStateException("Finner ikke 'client.properties' i work-katalogen");
         }
