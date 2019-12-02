@@ -34,6 +34,7 @@ dependencies {
 }
 
 gradlePlugin {
+    //noinspection GroovyAssignabilityCheck
     plugins {
         launcherPlugin {
             id = 'no.statkart.launcher'
@@ -42,14 +43,26 @@ gradlePlugin {
     }
 }
 
-// Minimumskrav til gradle byggesystemet dette pluginet brukes i.
+// Minimumskrav til java for å bygge launcher
 sourceCompatibility = JavaVersion.VERSION_11
 targetCompatibility = JavaVersion.VERSION_11
 
+// Minimumskrav til java for å bygge og kjøre klientdelen av launcher
+compileClientJava {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+// Minimumskrav til java for å bygge og kjøre tjenerdelen av launcher
+compileServerJava {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
 task clientJar(type: Jar) {
-    archiveName "launcher-client-${archiveVersion.get()}.jar"
+    archiveAppendix.set('client')
     from sourceSets.client.output
-    destinationDir file('build/client/lib')
+    destinationDirectory.set(file('build/client/lib'))
     manifest {
         attributes(
                 'Implementation-Title': 'Kartverkets launcher client',
@@ -58,17 +71,10 @@ task clientJar(type: Jar) {
     }
 }
 
-// Klienten som launcheren starter opp trenger denne java-versjonen.
-compileClientJava {
-    sourceCompatibility = JavaVersion.VERSION_12
-    targetCompatibility = JavaVersion.VERSION_12
-}
-
-
 task serverJar(type: Jar) {
-    archiveName "launcher-server-${archiveVersion.get()}.jar"
+    archiveAppendix.set('server')
     from sourceSets.server.output
-    destinationDir file('build/server/lib')
+    destinationDirectory.set(file('build/server/lib'))
     manifest {
         attributes(
                 'Implementation-Title': 'Kartverkets launcher server',
@@ -77,27 +83,12 @@ task serverJar(type: Jar) {
     }
 }
 
-// Server-kildekoden skal deployes i en servlet-container.
-// For Kartverket betyr dette per i dag weblogic - som kjører på java 1.8.
-compileServerJava {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
-
-tasks.create('downloadWindowsJdk', DownloadJdk, jdk_windows_url)
-tasks.create('downloadLinuxJdk', DownloadJdk, jdk_linux_url)
-tasks.create('downloadOSXJdk', DownloadJdk, jdk_osx_url)
-
 jar {
     // Pluginen trenger denne, men den ligger pt ikke i maven
     into('lib/packr') {
         from 'lib/packr-2.0-SNAPSHOT.jar'
     }
     into('jdk') {
-        from(downloadWindowsJdk)
-        from(downloadLinuxJdk)
-        from(downloadOSXJdk)
         from('jdk') {
             include 'fonts/*'
         }
@@ -114,18 +105,16 @@ jar {
         attributes(
                 'Implementation-Title': 'Kartverkets launcher',
                 'Implementation-Version': archiveVersion.get(),
-                'windows-jdk-image': jdk_windows_url,
-                'linux-jdk-image': jdk_linux_url,
-                'osx-jdk-image': jdk_osx_url,
         )
     }
 }
 
 task sourceJar(type: Jar) {
     from sourceSets.main.allSource
+    from sourceSets.client.allSource
+    from sourceSets.server.allSource
     classifier "sources"
 }
-
 
 publishing {
     publications.all {
@@ -135,11 +124,11 @@ publishing {
         String mavenUpload = System.getenv('MAVEN_PUBLISH')
         maven {
             if (mavenUpload) {
-                String creds = mavenUpload.split('@|//').getAt(1)
+                String creds = mavenUpload.split('@|//')[1]
                 url mavenUpload.replace(creds.concat('@'), '') // url kommer i konsoll - ikke ha credentials der
                 credentials {
-                    username creds.split(':').getAt(0) ?: ""
-                    password creds.split(':').getAt(1) ?: ""
+                    username creds.split(':')[0] ?: ""
+                    password creds.split(':')[1] ?: ""
                 }
             }
         }

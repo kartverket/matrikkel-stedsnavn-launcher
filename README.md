@@ -25,6 +25,9 @@ def keystore_password = System.getenv('keystore_password') ?: rootProject.file('
 
 launcher {
     jvm {
+        urlWindows = 'http://devbin.statkart.no:8070/bin/java/jdk/openjdk-12.0.2_windows-x64_bin.zip'
+        urlLinux = 'http://devbin.statkart.no:8070/bin/java/jdk/openjdk-12.0.2_linux-x64_bin.tar.gz'
+        urlOsx = 'http://devbin.statkart.no:8070/bin/java/jdk/openjdk-12.0.2_osx-x64_bin.tar.gz'
         modules = ['java.sql', 'java.desktop', 'java.naming', 'java.rmi', 'java.management', 'jdk.localedata']
         locales = ['no']
     }

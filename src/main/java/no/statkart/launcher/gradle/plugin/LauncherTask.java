@@ -141,6 +141,7 @@ public class LauncherTask extends DefaultTask {
     }
 
     private void packr(Jvm jvm) throws IOException {
+        jvm.download(utvidelse.getJvmUtvidelse().getUrl(jvm), toAbsolutePath("build/launcher/jdk"));
         jvm.unpack(toAbsolutePath("build/launcher/jdk"));
         jvm.jlink(
                 toAbsolutePath("build/launcher/jdk"),

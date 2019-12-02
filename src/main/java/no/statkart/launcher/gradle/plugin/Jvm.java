@@ -9,17 +9,20 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 enum Jvm {
@@ -35,6 +38,19 @@ enum Jvm {
 
     String getAlias() {
         return alias;
+    }
+
+    void download(String urlString, Path destinationDir) throws IOException {
+        URL url = new URL(urlString);
+        Path destination = destinationDir.resolve(Paths.get(url.getPath()).getFileName());
+        if (Files.isRegularFile(destination)) {
+            System.out.println("Using existing jvm at " + destination);
+            return;
+        }
+        System.out.println("Downloading jvm to " + destination);
+        try (InputStream in = url.openStream()) {
+            Files.copy(in, destination);
+        }
     }
 
     void unpack(Path dir) throws IOException {
@@ -58,15 +74,20 @@ enum Jvm {
         if (Files.exists(destination)) {
             return;
         }
-        String programnavn = isCurrentlyRunningWindows() ? "jlink.exe" : "jlink";
-        Path p = Path.of(System.getProperty("java.home"), "bin", programnavn);
-        String cmd = p.toString()
+        Jvm currentOS = jvmOfCurrentlyRunningOS();
+        Optional<Path> jlink = Files.walk(dir.resolve(currentOS.alias))
+                .filter(path -> path.endsWith("jlink") || path.endsWith("jlink.exe"))
+                .findFirst();
+        if (jlink.isEmpty()) {
+            throw new IllegalArgumentException("Cannot find jlink in " + dir);
+        }
+        String cmd = jlink.get().toString()
                 + " --module-path " + getJModsDirectory(source)
                 + " --add-modules " + String.join(",", modules)
                 + " --include-locales " + String.join(",", locales)
                 + " --output " + destination;
-        // System.out.println("jlink cwd=" + source.toFile());
-        // System.out.println("jlink cmd=" + cmd);
+//        System.out.println("jlink cwd=" + source.toFile());
+//        System.out.println("jlink cmd=" + cmd);
         Process prosess = Runtime.getRuntime().exec(cmd, null, source.toFile());
         try {
             prosess.waitFor();
@@ -137,6 +158,17 @@ enum Jvm {
                 }
             }
         }
+    }
+
+    private static Jvm jvmOfCurrentlyRunningOS() {
+        String name = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
+        if (name.contains("nux")) {
+            return Jvm.LINUX;
+        }
+        if (name.contains("mac")) {
+            return Jvm.OSX;
+        }
+        return Jvm.WINDOWS;
     }
 
     private boolean isCurrentlyRunningWindows() {
