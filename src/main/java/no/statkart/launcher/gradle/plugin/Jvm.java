@@ -171,10 +171,6 @@ enum Jvm {
         return Jvm.WINDOWS;
     }
 
-    private boolean isCurrentlyRunningWindows() {
-        return System.getProperty("os.name").toLowerCase(Locale.US).contains("windows");
-    }
-
     private String streamToString(InputStream is) throws IOException {
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         byte[] buffer = new byte[1024];
