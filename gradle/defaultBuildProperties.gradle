@@ -1,9 +1,6 @@
 [
         "launcher_version": "1.2-SNAPSHOT",
         "maven_repo"      : "https://nexus.statkart.no/repository/public/",
-        "jdk_windows_url" : "http://devbin.statkart.no:8070/bin/java/jdk/openjdk-12.0.2_windows-x64_bin.zip",
-        "jdk_linux_url"   : "http://devbin.statkart.no:8070/bin/java/jdk/openjdk-12.0.2_linux-x64_bin.tar.gz",
-        "jdk_osx_url"     : "http://devbin.statkart.no:8070/bin/java/jdk/openjdk-12.0.2_osx-x64_bin.tar.gz",
 ].sort().each { keyValuePair ->
     applyDefaultValueForBuildProperty(keyValuePair.key, keyValuePair.value)
 }
