@@ -10,6 +10,7 @@ import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
@@ -92,6 +93,9 @@ class Work {
     }
 
     List<LoginParametre> lesLoginParametre() throws IOException {
+        if (!Files.exists(rot)) {
+            return new ArrayList<>();
+        }
         try (Stream<Path> paths = Files.walk(rot)) {
             return paths.filter(this::erFilMedLoginHistorikk)
                     .map(this::tilProperties)

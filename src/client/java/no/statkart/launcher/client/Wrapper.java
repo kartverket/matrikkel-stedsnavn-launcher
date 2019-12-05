@@ -42,8 +42,7 @@ public class Wrapper {
         try {
             Work work = new Work(SYSTEM.finnRot());
             List<LoginParametre> forslagTilParametre = work.lesLoginParametre();
-            LoginParametre loginParametre = Login.innhentGyldigeLoginParametre
-                    (Konfigurasjon.get("tittel"), forslagTilParametre);
+            LoginParametre loginParametre = Login.innhentGyldigeLoginParametre(forslagTilParametre);
             String workMappe = work.finnEllerOpprettWorkMappe(loginParametre);
             work.skrivLoginParametre(loginParametre);
             loggTilFil(workMappe + "/launcher.log");
@@ -75,12 +74,12 @@ public class Wrapper {
     static class Windows implements OS {
         @Override
         public Path finnRot() {
-            String localAppData = System.getenv("LOCALAPPDATA");
-            if (localAppData == null) {
-                throw new IllegalStateException("Fant ikke variablen LOCALAPPDATA");
+            String appdata = System.getenv("APPDATA");
+            if (appdata == null) {
+                throw new IllegalStateException("Fant ikke variablen APPDATA");
             }
             String rot = Konfigurasjon.get("work.windows")
-                    .replace("%HOME%", localAppData);
+                    .replace("%HOME%", appdata);
             return Paths.get(rot);
         }
     }

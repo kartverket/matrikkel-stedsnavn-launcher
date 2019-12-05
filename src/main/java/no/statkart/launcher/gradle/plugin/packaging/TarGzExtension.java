@@ -33,6 +33,7 @@ public class TarGzExtension implements PackagingExtension {
              BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
              GzipCompressorOutputStream gzipOutputStream = new GzipCompressorOutputStream(bufferedOutputStream);
              TarArchiveOutputStream taos = new TarArchiveOutputStream(gzipOutputStream)) {
+            taos.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
             Files.walkFileTree(source, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
@@ -48,18 +49,19 @@ public class TarGzExtension implements PackagingExtension {
                     return FileVisitResult.CONTINUE;
                 }
             });
-            leggTilSymlink(taos);
+            leggTilSymlink("jre/lib/jli", taos);
+            leggTilSymlink("jre/lib/amd64", taos);
         }
     }
 
-    /**
-     * Denne symlinken er en workaround til en bug i packr.
-     * Binærfila fra packr peker på en undermappe i jdk'en som ikke lenger eksisterer etter java 8.
-     */
-    private void leggTilSymlink(TarArchiveOutputStream output) throws IOException {
-        Path path = Paths.get("jre/lib/amd64");
+    private void leggTilSymlink(String mappe, TarArchiveOutputStream output) throws IOException {
+        Path path = Paths.get(mappe);
         if (topDirectory != null) {
-            path = Paths.get(topDirectory).resolve(path);
+            if (topDirectory.endsWith(".app")) {
+                path = Paths.get(topDirectory).resolve("Contents").resolve("Resources").resolve(path);
+            } else {
+                path = Paths.get(topDirectory).resolve(path);
+            }
         }
         TarArchiveEntry link = new TarArchiveEntry(path.toString(), TarConstants.LF_SYMLINK);
         link.setLinkName(".");

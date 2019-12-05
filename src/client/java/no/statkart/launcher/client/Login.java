@@ -16,8 +16,9 @@ class Login {
      * Dette betyr at klientartifaktene som ligger bak
      * BASIC AUTH kan lastes ned av getdown.
      */
-    static LoginParametre innhentGyldigeLoginParametre(String tittel, List<LoginParametre> tidligereLoginParametre) {
-        String versjon = Login.class.getPackage().getImplementationVersion();
+    static LoginParametre innhentGyldigeLoginParametre(List<LoginParametre> tidligereLoginParametre) {
+        String tittel = Konfigurasjon.get("title");
+        String versjon = Konfigurasjon.get("version");
         LoginParametre gyldigeLoginParametre;
         Feil feil = null;
         do {
