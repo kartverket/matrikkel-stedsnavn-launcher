@@ -10,20 +10,16 @@ ned en klient som deretter startes.
 import org.apache.commons.compress.archivers.sevenz.SevenZMethod
 
 plugins {
-    id 'no.statkart.launcher' version '1.2.2'
+    id 'no.statkart.launcher' version '1.2.4'
 }
-
-/**
- * Denne verdien endres når sluttbruker må re-installere klienten.
- * Typisk er dette når man oppdaterer java-vm'en til klienten, eller oppgradere getdown/packr/loginvinduet osv.
- */
-ext.launcherVersion = '1.0'
 
 def keystore = rootProject.file(System.getenv('keystore') ?: 'launcher/keystore/selfsign.p12') as String
 def keystore_alias = System.getenv('keystore_alias') ?: 'selfsign'
 def keystore_password = System.getenv('keystore_password') ?: rootProject.file('launcher/keystore/selfsign.txt').text
 
 launcher {
+    // Dette er versjonen på matrikkelens launcher
+    version '1.2.4'
     jvm {
         urlWindows = 'http://devbin.statkart.no:8070/bin/java/jdk/openjdk-12.0.2_windows-x64_bin.zip'
         urlLinux = 'http://devbin.statkart.no:8070/bin/java/jdk/openjdk-12.0.2_linux-x64_bin.tar.gz'
@@ -32,20 +28,20 @@ launcher {
         locales = ['no']
     }
     getdown {
-        client 'launcher/getdown/client'
-        server 'launcher/getdown/server'
+        client project.file('launcher/getdown/client')
+        server project.file('launcher/getdown/server')
     }
-    classpath configurations.runtime, tasks.jar
     executable 'matrikkelklient'
-    metainf 'launcher/metainf'
-    webinf 'launcher/webinf'
-    webinfLibs configurations.serverRuntime, tasks.serverJar
-
-    icons 'launcher/icons/program.icns'
-    windowsIcons 'launcher/lib'
-    artifakter {
+    classpath configurations.runtimeClasspath, tasks.jar
+    icon {
+        windows project.file('launcher/icon/windows')
+        osx project.file('launcher/icon/osx/program.icns')
+    }
+    webinf project.file('launcher/webinf')
+    metainf project.file('launcher/metainf')
+    webinfLibs configurations.serverRuntimeClasspath, tasks.serverJar
+    artifacts {
         windows {
-            output "Matrikkelklient-${launcherVersion}-installer.exe"
             packaging '7z'
             packagingConfig {
                 method SevenZMethod.DEFLATE
@@ -59,20 +55,13 @@ launcher {
             }
         }
         linux {
-            output "matrikkelklient-linux-${launcherVersion}.tar.gz"
             packaging 'targz'
-            packagingConfig {
-                topDirectory "matrikkelklient-linux-${launcherVersion}"
-            }
         }
         osx {
-            output "matrikkelklient-osx-${launcherVersion}.zip"
-            packaging 'zip'
-            packagingConfig {
-                topDirectory "matrikkelklient-osx-${launcherVersion}.app"
-            }
+            packaging 'targz'
         }
     }
 }
+tasks['assemble'].dependsOn(tasks['launcher'])
 ```
 Kikk i de filene og mappene til matrikkelklienten som er referert over for å se hva som trengs av ekstra oppsett.

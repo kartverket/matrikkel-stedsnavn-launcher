@@ -1,27 +1,33 @@
 package no.statkart.launcher.gradle.plugin;
 
+import org.gradle.api.tasks.InputFile;
+
+import java.io.File;
+
 public class GetdownExtension {
 
-    private String client;
-    private String server;
+    private File client;
+    private File server;
 
     // Kalles vha refleksjon av gradle
     @SuppressWarnings("unused")
-    public void client(String client) {
+    public void client(File client) {
         this.client = client;
     }
 
     // Kalles vha refleksjon av gradle
     @SuppressWarnings("unused")
-    public void server(String server) {
+    public void server(File server) {
         this.server = server;
     }
 
-    String getClient() {
+    @InputFile
+    File getClient() {
         return client;
     }
 
-    String getServer() {
+    @InputFile
+    File getServer() {
         return server;
     }
 

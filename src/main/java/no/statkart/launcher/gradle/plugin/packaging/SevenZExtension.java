@@ -13,7 +13,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 
@@ -23,16 +22,27 @@ import static java.nio.file.StandardOpenOption.WRITE;
 
 public class SevenZExtension implements PackagingExtension {
 
-    private String topDirectory;
+    private final String arch;
+
+    private String name;
+    private String version;
 
     private SevenZMethod method;
     private File sfx;
     private File sfxConfig;
 
-    // Kalles vha refleksjon av gradle
-    @SuppressWarnings("unused")
-    public void topDirectory(String topDirectory) {
-        this.topDirectory = topDirectory;
+    public SevenZExtension(String arch) {
+        this.arch = arch;
+    }
+
+    @Override
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public void setVersion(String version) {
+        this.version = version;
     }
 
     // Kalles vha refleksjon av gradle
@@ -54,11 +64,13 @@ public class SevenZExtension implements PackagingExtension {
     }
 
     @Override
-    public void execute(Path fromDir, Path toFile) throws IOException {
+    public Path execute(Path fromDir, Path toDir) throws IOException {
+        Path toFile = toDir.resolve(toFilename(name, version));
         Path tmp = toFile.getParent().resolve(toFile.getFileName().toString() + ".tmp");
         opprett7z(fromDir, tmp);
         lagSelfExtracting7z(tmp, toFile);
         slett(tmp);
+        return toFile;
     }
 
     /**
@@ -74,9 +86,6 @@ public class SevenZExtension implements PackagingExtension {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     Path path = source.relativize(file);
-                    if (topDirectory != null) {
-                        path = Paths.get(topDirectory).resolve(path);
-                    }
                     SevenZArchiveEntry entry = new SevenZArchiveEntry();
                     entry.setName(path.toString());
                     sevenZOutputFile.putArchiveEntry(entry);
@@ -101,10 +110,8 @@ public class SevenZExtension implements PackagingExtension {
     private void lagSelfExtracting7z(Path source, Path destination) throws IOException {
         Path sfxPath = sfx.toPath();
         Path sfxConfigPath = sfxConfig.toPath();
-        String klientversjon = //destination.getFileName().toString().replaceAll("^.*-(\\d+\\.\\d+)-.*$", "$1");
-                getClass().getPackage().getImplementationVersion();
         String configInnhold = Files.readString(sfxConfigPath);
-        configInnhold = configInnhold.replaceAll("%klientversjon%", klientversjon);
+        configInnhold = configInnhold.replaceAll("%klientversjon%", version);
         try (FileChannel out = FileChannel.open(destination, CREATE, WRITE)) {
             append(out, sfxPath);
             append(out, configInnhold);
@@ -126,6 +133,13 @@ public class SevenZExtension implements PackagingExtension {
 
     private void append(FileChannel out, String innhold) throws IOException {
         out.write(ByteBuffer.wrap(innhold.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    private String toFilename(String name, String version) {
+        if ("windows".equals(arch)) {
+            return name + "-" + arch + "-" + version + "-installer.exe";
+        }
+        return name + "-" + arch + "-" + version + "-installer";
     }
 
 }

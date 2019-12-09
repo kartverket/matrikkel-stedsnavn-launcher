@@ -5,6 +5,10 @@ import java.nio.file.Path;
 
 public interface PackagingExtension {
 
-    void execute(Path fromDir, Path toFile) throws IOException;
+    void setName(String name);
+
+    void setVersion(String version);
+
+    Path execute(Path fromDir, Path toDir) throws IOException;
 
 }

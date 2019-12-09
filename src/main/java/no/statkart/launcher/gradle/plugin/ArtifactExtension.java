@@ -10,27 +10,26 @@ import org.gradle.util.ConfigureUtil;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class ArtifaktExtension {
+public class ArtifactExtension {
 
-    private String output;
+    private final String arch;
+
     private PackagingExtension packagingExt;
     private SigningExtension signingExt;
 
-    // Kalles vha refleksjon av gradle
-    @SuppressWarnings("unused")
-    public void output(String output) {
-        this.output = output;
+    ArtifactExtension(String arch) {
+        this.arch = arch;
     }
 
     // Kalles vha refleksjon av gradle
     @SuppressWarnings("unused")
     public void packaging(String packaging) {
         if ("7z".equals(packaging)) {
-            packagingExt = new SevenZExtension();
+            packagingExt = new SevenZExtension(arch);
         } else if ("targz".equals(packaging)) {
-            packagingExt = new TarGzExtension();
+            packagingExt = new TarGzExtension(arch);
         } else if ("zip".equals(packaging)) {
-            packagingExt = new ZipExtension();
+            packagingExt = new ZipExtension(arch);
         } else {
             throw new IllegalArgumentException("Ukjent innpakkingsmetode '" + packaging + "'");
         }
@@ -38,22 +37,23 @@ public class ArtifaktExtension {
 
     // Kalles vha refleksjon av gradle
     @SuppressWarnings("unused")
-    public void packagingConfig(Closure c) {
+    public void packagingConfig(Closure<?> c) {
         ConfigureUtil.configure(c, packagingExt);
     }
 
     // Kalles vha refleksjon av gradle
     @SuppressWarnings("unused")
-    public void signing(Closure c) {
+    public void signing(Closure<?> c) {
         signingExt = new SigningExtension();
         ConfigureUtil.configure(c, signingExt);
     }
 
-    void execute(Path fromDirPath, Path toDirPath) {
+    void execute(Path fromDirPath, Path toDirPath, String name, String version) {
         try {
             Files.createDirectories(toDirPath);
-            Path toFilePath = toDirPath.resolve(output);
-            packagingExt.execute(fromDirPath, toFilePath);
+            packagingExt.setName(name);
+            packagingExt.setVersion(version);
+            Path toFilePath = packagingExt.execute(fromDirPath, toDirPath);
             if (signingExt != null) {
                 signingExt.execute(toFilePath);
             }

@@ -1,13 +1,14 @@
 package no.statkart.launcher.gradle.plugin;
 
 import groovy.lang.Closure;
+import org.gradle.api.tasks.Nested;
 import org.gradle.util.ConfigureUtil;
 
-public class ArtifakterExtension {
+public class ArtifactsExtension {
 
-    private final ArtifaktExtension windowsExt = new ArtifaktExtension();
-    private final ArtifaktExtension linuxExt = new ArtifaktExtension();
-    private final ArtifaktExtension osxExt = new ArtifaktExtension();
+    private final ArtifactExtension windowsExt = new ArtifactExtension("windows");
+    private final ArtifactExtension linuxExt = new ArtifactExtension("linux");
+    private final ArtifactExtension osxExt = new ArtifactExtension("osx");
 
     // Kalles vha refleksjon av gradle
     @SuppressWarnings("unused")
@@ -27,15 +28,18 @@ public class ArtifakterExtension {
         ConfigureUtil.configure(c, osxExt);
     }
 
-    ArtifaktExtension getWindows() {
+    @Nested
+    ArtifactExtension getWindows() {
         return windowsExt;
     }
 
-    ArtifaktExtension getLinux() {
+    @Nested
+    ArtifactExtension getLinux() {
         return linuxExt;
     }
 
-    ArtifaktExtension getOSX() {
+    @Nested
+    ArtifactExtension getOsx() {
         return osxExt;
     }
 

@@ -1,5 +1,7 @@
 package no.statkart.launcher.gradle.plugin;
 
+import org.gradle.api.tasks.Input;
+
 import java.util.List;
 
 public class JvmExtension {
@@ -50,10 +52,12 @@ public class JvmExtension {
         return urlWindows;
     }
 
+    @Input
     List<String> getModules() {
         return modules;
     }
 
+    @Input
     List<String> getLocales() {
         return locales;
     }

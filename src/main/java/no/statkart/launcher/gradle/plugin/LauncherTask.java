@@ -3,30 +3,48 @@ package no.statkart.launcher.gradle.plugin;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.provider.Provider;
-import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.process.JavaExecSpec;
 import org.gradle.util.GFileUtils;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.*;
-import java.util.jar.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.jar.Attributes;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 
 public class LauncherTask extends DefaultTask {
+
     private final LauncherExtension utvidelse;
 
     public LauncherTask() {
         utvidelse = getProject().getExtensions().findByType(LauncherExtension.class);
+        if (utvidelse == null) {
+            throw new IllegalStateException("Launcher not configured");
+        }
         dependsOn(utvidelse.getClasspath()); // build jars from includeBuilds
         dependsOn(utvidelse.getWebinfLibs()); // build jars from includeBuilds
     }
@@ -118,17 +136,23 @@ public class LauncherTask extends DefaultTask {
     }
 
     private void lagKlientinstallereForNedlasting() {
-        utvidelse.getArtifakterUtvidelse().getWindows().execute(
+        utvidelse.getArtifactsUtvidelse().getWindows().execute(
                 toAbsolutePath("build/launcher/packr/windows"),
-                toAbsolutePath("build/launcher/war/download")
+                toAbsolutePath("build/launcher/war/download"),
+                utvidelse.getExecutable(),
+                utvidelse.getVersion()
         );
-        utvidelse.getArtifakterUtvidelse().getLinux().execute(
+        utvidelse.getArtifactsUtvidelse().getLinux().execute(
                 toAbsolutePath("build/launcher/packr/linux"),
-                toAbsolutePath("build/launcher/war/download")
+                toAbsolutePath("build/launcher/war/download"),
+                utvidelse.getExecutable(),
+                utvidelse.getVersion()
         );
-        utvidelse.getArtifakterUtvidelse().getOSX().execute(
+        utvidelse.getArtifactsUtvidelse().getOsx().execute(
                 toAbsolutePath("build/launcher/packr/osx"),
-                toAbsolutePath("build/launcher/war/download")
+                toAbsolutePath("build/launcher/war/download"),
+                utvidelse.getExecutable(),
+                utvidelse.getVersion()
         );
     }
 
@@ -158,9 +182,11 @@ public class LauncherTask extends DefaultTask {
             try (Stream<Path> paths = Files.list(toAbsolutePath("build/launcher/lib"))) {
                 config.classpath = paths.map(Path::toString).collect(Collectors.toList());
             }
-            String icons = utvidelse.getIcons();
-            if (icons != null) {
-                config.iconResource = toAbsolutePath(utvidelse.getIcons()).toFile();
+            if (jvm == Jvm.OSX) {
+                File icns = utvidelse.getIconUtvidelse().getOsx();
+                if (icns != null) {
+                    config.iconResource = icns;
+                }
             }
             config.jdk = "x";
             exec(config);
@@ -169,6 +195,7 @@ public class LauncherTask extends DefaultTask {
         }
         copyResources("jdk/fonts", "build/launcher/packr/" + topDirectory(jvm) + "/jre/lib/fonts");
         copy(utvidelse.getGetdownUtvidelse().getClient(), "build/launcher/packr/" + topDirectory(jvm) + "/work");
+        append("version = " + utvidelse.getVersion(), "build/launcher/packr/" + topDirectory(jvm) + "/work/client.properties");
     }
 
     private String topDirectory(Jvm jvm) {
@@ -192,6 +219,13 @@ public class LauncherTask extends DefaultTask {
         });
     }
 
+    private void copy(File fromDir, String toDir) throws IOException {
+        if (!fromDir.isDirectory()) {
+            throw new IOException(fromDir + " must be a directory");
+        }
+        copy(fromDir.getAbsolutePath(), toDir);
+    }
+
     private void copy(String fromDir, String toDir) throws IOException {
         Path fromDirPath = toAbsolutePath(fromDir);
         Path toDirPath = toAbsolutePath(toDir);
@@ -208,6 +242,12 @@ public class LauncherTask extends DefaultTask {
                 }
             });
         }
+    }
+
+    private void append(String content, String toFile) throws IOException {
+        Path toFilePath = toAbsolutePath(toFile);
+        Charset charset = StandardCharsets.UTF_8;
+        Files.write(toFilePath, content.getBytes(charset), StandardOpenOption.APPEND);
     }
 
     private List<String> getResources(String resourceDir) throws IOException {
@@ -250,75 +290,13 @@ public class LauncherTask extends DefaultTask {
         }
     }
 
-    @Nested
-    private LauncherExtension getUtvidelse() {
-        return utvidelse;
-    }
-
     private Path toAbsolutePath(String relativePath) {
         Path root = getProject().getProjectDir().toPath();
         return root.resolve(relativePath);
     }
 
-
-    private static class PackrConfig {
-        Jvm platform;
-        String jdk;
-        String executable;
-        List<String> classpath;
-        List<String> removePlatformLibs;
-        String mainClass;
-        List<String> vmArgs;
-        String minimizeJre;
-        File cacheJre;
-        List<File> resources;
-        File outDir;
-        File platformLibsOutDir;
-        File iconResource;
-        String bundleIdentifier;
-
-        boolean verbose;
-
-        /**
-         * For command line reference, see com.badlogicgames.packr.PackrCommandLine:
-         * http://github.com/libgdx/packr/blob/master/src/main/java/com/badlogicgames/packr/PackrCommandLine.java
-         *
-         * 'longName' tar to bindestreker mens 'shortName' tar en bindestrek foran argumentnavnet.
-         * For mer informasjon se http://jewelcli.lexicalscope.com/usage.html
-         */
-        private void decorateExecSpecs(JavaExecSpec execSpec) {
-            if (platform == Jvm.OSX) {
-                execSpec.args("--platform", "mac");
-            } else  if (platform == Jvm.LINUX) {
-                execSpec.args("--platform", "linux64");
-            } else {
-                execSpec.args("--platform", "windows64");
-            }
-            execSpec.args("--jdk", jdk);
-            execSpec.args("--executable", executable);
-            execSpec.args("--classpath").args(classpath);
-            if (removePlatformLibs != null) {
-                execSpec.args("--removelibs").args(removePlatformLibs);
-            }
-            execSpec.args("--mainclass", mainClass);
-
-
-            if (cacheJre != null) {
-                execSpec.args("--cachejre", cacheJre);
-            }
-
-            execSpec.args("--output", outDir);
-
-            execSpec.args("--icon", iconResource);
-
-            if (verbose) {
-                execSpec.args("-v");
-            }
-        }
-    }
-
     @OutputFile
-    private Provider<File> getPackrJar() {
+    public Provider<File> getPackrJar() {
         return getProject().provider(() -> {
             URL url = LauncherTask.class.getResource("/lib/packr/packr-2.0-SNAPSHOT.jar");
             File file = getProject().file("build/packr/packr.jar");
@@ -331,15 +309,14 @@ public class LauncherTask extends DefaultTask {
         getProject().javaexec(execSpecs -> {
             config.decorateExecSpecs(execSpecs);
             execSpecs.setMain("com.badlogicgames.packr.Packr");
-            //Gjeldende workaround er å legge en hacket versjon av packr*.exe
-            //NB: Denne må komme først på classpath!
-            if (utvidelse.getWindowsIcons() != null) {
-                execSpecs.classpath(utvidelse.getWindowsIcons());
+            // Gjeldende workaround er å legge en hacket versjon av packr*.exe
+            // NB: Denne må komme først på classpath!
+            File windows = utvidelse.getIconUtvidelse().getWindows();
+            if (windows != null) {
+                execSpecs.classpath(windows);
             }
             execSpecs.classpath(getPackrJar());
-
         }).assertNormalExitValue();
     }
-
 
 }
