@@ -48,6 +48,10 @@ public class ArtifactExtension {
         ConfigureUtil.configure(c, signingExt);
     }
 
+    public PackagingExtension getPackagingConfig() {
+        return packagingExt;
+    }
+
     void execute(Path fromDirPath, Path toDirPath, String name, String version) {
         try {
             Files.createDirectories(toDirPath);

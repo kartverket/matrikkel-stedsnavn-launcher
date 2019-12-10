@@ -6,6 +6,7 @@ import org.apache.commons.compress.archivers.tar.TarConstants;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 
 import java.io.BufferedOutputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -19,6 +20,7 @@ public class TarGzExtension implements PackagingExtension {
 
     private final String arch;
 
+    private File icon;
     private String name;
     private String version;
 
@@ -34,6 +36,17 @@ public class TarGzExtension implements PackagingExtension {
     @Override
     public void setVersion(String version) {
         this.version = version;
+    }
+
+    @Override
+    public File getIcon() {
+        return icon;
+    }
+
+    // Kalles vha refleksjon av gradle
+    @SuppressWarnings("unused")
+    public void icon(File icon) {
+        this.icon = icon;
     }
 
     @Override

@@ -27,6 +27,7 @@ public class SevenZExtension implements PackagingExtension {
     private String name;
     private String version;
 
+    private File icon;
     private SevenZMethod method;
     private File sfx;
     private File sfxConfig;
@@ -43,6 +44,17 @@ public class SevenZExtension implements PackagingExtension {
     @Override
     public void setVersion(String version) {
         this.version = version;
+    }
+
+    @Override
+    public File getIcon() {
+        return icon;
+    }
+
+    // Kalles vha refleksjon av gradle
+    @SuppressWarnings("unused")
+    public void icon(File icon) {
+        this.icon = icon;
     }
 
     // Kalles vha refleksjon av gradle
