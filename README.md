@@ -31,15 +31,11 @@ launcher {
         client project.file('launcher/getdown/client')
         server project.file('launcher/getdown/server')
     }
-    executable 'matrikkelklient'
-    classpath configurations.runtimeClasspath, tasks.jar
-    icon {
-        windows project.file('launcher/icon/windows')
-        osx project.file('launcher/icon/osx/program.icns')
-    }
     webinf project.file('launcher/webinf')
     metainf project.file('launcher/metainf')
     webinfLibs configurations.serverRuntimeClasspath, tasks.serverJar
+    executable 'matrikkelklient'
+    classpath configurations.runtimeClasspath, tasks.jar
     artifacts {
         windows {
             packaging '7z'
@@ -53,12 +49,14 @@ launcher {
                 alias keystore_alias
                 password keystore_password
             }
+            icon project.file('launcher/icon/windows')
         }
         linux {
             packaging 'targz'
         }
         osx {
             packaging 'targz'
+            icon project.file('launcher/icon/osx/program.icns')
         }
     }
 }

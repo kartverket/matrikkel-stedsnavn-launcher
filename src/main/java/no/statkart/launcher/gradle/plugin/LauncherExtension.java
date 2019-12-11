@@ -26,7 +26,6 @@ public class LauncherExtension {
     private JvmExtension jvmExt;
     private GetdownExtension getdownExt;
     private ArtifactsExtension artifactsExtension;
-    private IconExtension iconExt;
 
     public LauncherExtension(Project project) {
         classpath = project.files();
@@ -90,13 +89,6 @@ public class LauncherExtension {
         ConfigureUtil.configure(c, artifactsExtension);
     }
 
-    // Kalles vha refleksjon av gradle
-    @SuppressWarnings("unused")
-    public void icon(Closure<?> c) {
-        iconExt = new IconExtension();
-        ConfigureUtil.configure(c, iconExt);
-    }
-
     @InputFiles
     FileCollection getClasspath() {
         return classpath;
@@ -125,11 +117,6 @@ public class LauncherExtension {
     @InputFiles
     FileCollection getWebinfLibs() {
         return webinfLibs;
-    }
-
-    @Nested
-    IconExtension getIconUtvidelse() {
-        return iconExt;
     }
 
     @Nested

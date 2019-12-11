@@ -7,6 +7,7 @@ import no.statkart.launcher.gradle.plugin.packaging.TarGzExtension;
 import no.statkart.launcher.gradle.plugin.packaging.ZipExtension;
 import org.gradle.util.ConfigureUtil;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -14,6 +15,7 @@ public class ArtifactExtension {
 
     private final String arch;
 
+    private File icon;
     private PackagingExtension packagingExt;
     private SigningExtension signingExt;
 
@@ -46,6 +48,16 @@ public class ArtifactExtension {
     public void signing(Closure<?> c) {
         signingExt = new SigningExtension();
         ConfigureUtil.configure(c, signingExt);
+    }
+
+    // Kalles vha refleksjon av gradle
+    @SuppressWarnings("unused")
+    public void icon(File icon) {
+        this.icon = icon;
+    }
+
+    public File getIcon() {
+        return icon;
     }
 
     public PackagingExtension getPackagingConfig() {

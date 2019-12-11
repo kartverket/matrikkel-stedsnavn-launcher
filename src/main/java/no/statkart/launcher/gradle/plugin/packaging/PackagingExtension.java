@@ -10,8 +10,6 @@ public interface PackagingExtension {
 
     void setVersion(String version);
 
-    File getIcon();
-
     Path execute(Path fromDir, Path toDir) throws IOException;
 
 }

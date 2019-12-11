@@ -183,7 +183,7 @@ public class LauncherTask extends DefaultTask {
                 config.classpath = paths.map(Path::toString).collect(Collectors.toList());
             }
             if (jvm == Jvm.OSX) {
-                File icns = utvidelse.getArtifactsUtvidelse().getOsx().getPackagingConfig().getIcon();
+                File icns = utvidelse.getArtifactsUtvidelse().getOsx().getIcon();
                 if (icns != null) {
                     config.iconResource = icns;
                 }
@@ -311,7 +311,7 @@ public class LauncherTask extends DefaultTask {
             execSpecs.setMain("com.badlogicgames.packr.Packr");
             // Gjeldende workaround er å legge en hacket versjon av packr*.exe
             // NB: Denne må komme først på classpath!
-            File windows = utvidelse.getArtifactsUtvidelse().getWindows().getPackagingConfig().getIcon();
+            File windows = utvidelse.getArtifactsUtvidelse().getWindows().getIcon();
             if (windows != null) {
                 execSpecs.classpath(windows);
             }

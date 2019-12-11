@@ -8,7 +8,7 @@ def libraries = [
       jsign                   : 'net.jsign:jsign-core:2.1',
       servlet_api             : 'javax.servlet:javax.servlet-api:3.1.0',
       seven_z                 : 'org.tukaani:xz:1.8',
-      slf4j_api               : 'org.slf4j:slf4j-api:1.7.29',
+      slf4j_api               : 'org.slf4j:slf4j-api:1.8.0-beta4',
 ]
 
 // Eksponerer denne for alle prosjekter
