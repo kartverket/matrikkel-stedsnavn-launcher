@@ -26,7 +26,9 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -53,14 +55,19 @@ public class LauncherTask extends DefaultTask {
     @SuppressWarnings("unused")
     public void execute() throws IOException {
         lagKlienter();
-        lagKlientinstallereForNedlasting();
-        opprettTjenerWebapp();
+        Map<String, String> artifacts = lagKlientinstallereForNedlasting();
+        opprettTjenerWebapp(artifacts);
         opprettWar();
+    }
+
+    @OutputFile
+    public Path getWarDestination() {
+        return toAbsolutePath("build/launcher/launcher.war");
     }
 
     private void opprettWar() throws IOException {
         Path source = toAbsolutePath("build/launcher/war");
-        Path destination = toAbsolutePath("build/launcher/launcher.war");
+        Path destination = getWarDestination();
         Files.createDirectories(destination.getParent());
         try (FileOutputStream fileOutputStream = new FileOutputStream(destination.toFile());
              JarOutputStream jos = new JarOutputStream(fileOutputStream)) {
@@ -77,7 +84,7 @@ public class LauncherTask extends DefaultTask {
         }
     }
 
-    private void opprettTjenerWebapp() throws IOException {
+    private void opprettTjenerWebapp(Map<String, String> artifacts) throws IOException {
         opprettPathingJar(utvidelse.getClasspath(), "build/launcher/war/vault/client-dependencies.jar");
         copy(utvidelse.getClasspath(), "build/launcher/war/vault");
         copy(utvidelse.getWebinf(), "build/launcher/war/WEB-INF");
@@ -88,6 +95,9 @@ public class LauncherTask extends DefaultTask {
         }
         copyResources("lib/server", "build/launcher/war/WEB-INF/lib");
         copy(utvidelse.getWebinfLibs(), "build/launcher/war/WEB-INF/lib");
+        for (Map.Entry<String, String> e : artifacts.entrySet()) {
+            replace("build/launcher/war/WEB-INF/web.xml", "@@" + e.getKey() + "@@", e.getValue());
+        }
         copy(utvidelse.getGetdownUtvidelse().getServer(), "build/launcher/war/vault");
         replace("build/launcher/war/vault/getdown.txt", "@@code@@", asCode(utvidelse.getClasspath()));
     }
@@ -135,25 +145,30 @@ public class LauncherTask extends DefaultTask {
         }
     }
 
-    private void lagKlientinstallereForNedlasting() {
-        utvidelse.getArtifactsUtvidelse().getWindows().execute(
-                toAbsolutePath("build/launcher/packr/windows"),
-                toAbsolutePath("build/launcher/war/download"),
-                utvidelse.getExecutable(),
-                utvidelse.getVersion()
-        );
-        utvidelse.getArtifactsUtvidelse().getLinux().execute(
-                toAbsolutePath("build/launcher/packr/linux"),
-                toAbsolutePath("build/launcher/war/download"),
-                utvidelse.getExecutable(),
-                utvidelse.getVersion()
-        );
-        utvidelse.getArtifactsUtvidelse().getOsx().execute(
-                toAbsolutePath("build/launcher/packr/osx"),
-                toAbsolutePath("build/launcher/war/download"),
-                utvidelse.getExecutable(),
-                utvidelse.getVersion()
-        );
+    private Map<String, String> lagKlientinstallereForNedlasting() {
+        Map<String, String> artifacts = new HashMap<>();
+        artifacts.put("windows",
+                utvidelse.getArtifactsUtvidelse().getWindows().execute(
+                        toAbsolutePath("build/launcher/packr/windows"),
+                        toAbsolutePath("build/launcher/war/download"),
+                        utvidelse.getExecutable(),
+                        utvidelse.getVersion()
+                ));
+        artifacts.put("linux",
+                utvidelse.getArtifactsUtvidelse().getLinux().execute(
+                        toAbsolutePath("build/launcher/packr/linux"),
+                        toAbsolutePath("build/launcher/war/download"),
+                        utvidelse.getExecutable(),
+                        utvidelse.getVersion()
+                ));
+        artifacts.put("osx",
+                utvidelse.getArtifactsUtvidelse().getOsx().execute(
+                        toAbsolutePath("build/launcher/packr/osx"),
+                        toAbsolutePath("build/launcher/war/download"),
+                        utvidelse.getExecutable(),
+                        utvidelse.getVersion()
+                ));
+        return artifacts;
     }
 
     private void lagKlienter() throws IOException {

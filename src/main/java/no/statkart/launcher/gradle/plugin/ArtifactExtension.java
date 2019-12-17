@@ -64,7 +64,7 @@ public class ArtifactExtension {
         return packagingExt;
     }
 
-    void execute(Path fromDirPath, Path toDirPath, String name, String version) {
+    String execute(Path fromDirPath, Path toDirPath, String name, String version) {
         try {
             Files.createDirectories(toDirPath);
             packagingExt.setName(name);
@@ -73,6 +73,7 @@ public class ArtifactExtension {
             if (signingExt != null) {
                 signingExt.execute(toFilePath);
             }
+            return toFilePath.getFileName().toString();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
