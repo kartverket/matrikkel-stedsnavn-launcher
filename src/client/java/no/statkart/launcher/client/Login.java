@@ -17,8 +17,8 @@ class Login {
      * BASIC AUTH kan lastes ned av getdown.
      */
     static LoginParametre innhentGyldigeLoginParametre(List<LoginParametre> tidligereLoginParametre) {
-        String tittel = Konfigurasjon.get("title");
-        String versjon = Konfigurasjon.get("version");
+        String tittel = Konfigurasjon.get(Konfigurasjonsverdi.TITLE);
+        String versjon = Konfigurasjon.get(Konfigurasjonsverdi.VERSION);
         LoginParametre gyldigeLoginParametre;
         Feil feil = null;
         do {
@@ -41,7 +41,7 @@ class Login {
             gyldigeLoginParametre = loginParametre.get();
             try {
                 Integer.parseInt(gyldigeLoginParametre.getHeap());
-                URL tst = new URL(gyldigeLoginParametre.getTjener() + Konfigurasjon.get("tryCredentialsUsing"));
+                URL tst = new URL(gyldigeLoginParametre.getTjener() + Konfigurasjon.get(Konfigurasjonsverdi.TRY_CRENDENTIALS_USING_PATH));
                 tst.openConnection().getInputStream();
                 loggInnIKlienten(gyldigeLoginParametre);
                 registrerLauncherVersjon(versjon);

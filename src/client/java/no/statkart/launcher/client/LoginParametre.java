@@ -8,7 +8,7 @@ class LoginParametre {
     private String tjener;
     private String brukernavn;
     private char[] passord;
-    private String heap = Konfigurasjon.get("default.heap");
+    private String heap = Konfigurasjon.get(Konfigurasjonsverdi.DEFAULT_HEAP);
     private long oppdatert = System.currentTimeMillis();
 
     LoginParametre() {

@@ -10,11 +10,11 @@ class Konfigurasjon {
 
     private static Properties properties;
 
-    static synchronized String get(String key) {
+    static synchronized String get(Konfigurasjonsverdi key) {
         if (properties == null) {
             properties = getProperties();
         }
-        return properties.getProperty(key);
+        return properties.getProperty(key.getKey());
     }
 
     private static Properties getProperties() {

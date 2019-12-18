@@ -210,7 +210,7 @@ public class LauncherTask extends DefaultTask {
         }
         copyResources("jdk/fonts", "build/launcher/packr/" + topDirectory(jvm) + "/jre/lib/fonts");
         copy(utvidelse.getGetdownUtvidelse().getClient(), "build/launcher/packr/" + topDirectory(jvm) + "/work");
-        append("version = " + utvidelse.getVersion(), "build/launcher/packr/" + topDirectory(jvm) + "/work/client.properties");
+        replace("build/launcher/packr/" + topDirectory(jvm) + "/work/client.properties", "@@version@@", utvidelse.getVersion());
     }
 
     private String topDirectory(Jvm jvm) {

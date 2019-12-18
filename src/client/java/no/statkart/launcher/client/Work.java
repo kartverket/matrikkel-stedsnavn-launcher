@@ -121,7 +121,7 @@ class Work {
                 // Legacy-støtte for touch.txt
                 properties.setProperty("tjener", mappenavnTilTjener(p.getParent().getFileName().toString()));
                 properties.setProperty("oppdatert", new String(Files.readAllBytes(p)));
-                properties.setProperty("heap", Konfigurasjon.get("default.heap"));
+                properties.setProperty("heap", Konfigurasjon.get(Konfigurasjonsverdi.DEFAULT_HEAP));
                 return properties;
             }
         } catch (IOException e) {

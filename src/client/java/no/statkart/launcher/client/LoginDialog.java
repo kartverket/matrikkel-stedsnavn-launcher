@@ -54,7 +54,7 @@ class LoginDialog {
         for (LoginParametre parametre : listeAvParametre) {
             tidligereParametre.put(parametre.getTjener(), parametre);
         }
-        String defaultTjener = Konfigurasjon.get("default.tjener");
+        String defaultTjener = Konfigurasjon.get(Konfigurasjonsverdi.DEFAULT_SERVER);
         if (defaultTjener != null && !tidligereParametre.containsKey(defaultTjener)) {
             tidligereParametre.put(defaultTjener, new LoginParametre().medTjener(defaultTjener));
         }

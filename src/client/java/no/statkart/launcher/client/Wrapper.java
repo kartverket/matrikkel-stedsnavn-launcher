@@ -78,7 +78,7 @@ public class Wrapper {
             if (appdata == null) {
                 throw new IllegalStateException("Fant ikke variablen APPDATA");
             }
-            String rot = Konfigurasjon.get("work.windows")
+            String rot = Konfigurasjon.get(Konfigurasjonsverdi.WORK_WINDOWS)
                     .replace("%HOME%", appdata);
             return Paths.get(rot);
         }
@@ -91,7 +91,7 @@ public class Wrapper {
             if (home == null) {
                 throw new IllegalStateException("Fant ikke variablen user.home");
             }
-            String rot = Konfigurasjon.get("work.linux")
+            String rot = Konfigurasjon.get(Konfigurasjonsverdi.WORK_LINUX)
                     .replace("%HOME%", home);
             return Paths.get(rot);
         }
@@ -104,7 +104,7 @@ public class Wrapper {
             if (home == null) {
                 throw new IllegalStateException("Fant ikke variablen user.home");
             }
-            String rot = Konfigurasjon.get("work.osx")
+            String rot = Konfigurasjon.get(Konfigurasjonsverdi.WORK_OSX)
                     .replace("%HOME%", home);
             return Paths.get(rot);
         }
