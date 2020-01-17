@@ -174,14 +174,17 @@ public class LauncherTask extends DefaultTask {
     private void lagKlienter() throws IOException {
         copyResources("lib/client", "build/launcher/lib/");
         copyResources("jdk", "build/launcher/jdk/");
-        packr(Jvm.WINDOWS);
-        packr(Jvm.LINUX);
-        packr(Jvm.OSX);
+        Jvm[] jvms = {Jvm.WINDOWS, Jvm.LINUX, Jvm.OSX};
+        for (Jvm jvm: jvms) {
+            jvm.download(utvidelse.getJvmUtvidelse().getUrl(jvm), toAbsolutePath("build/launcher/jdk"));
+            jvm.unpack(toAbsolutePath("build/launcher/jdk"));
+        }
+        for (Jvm jvm: jvms) {
+            packr(jvm);
+        }
     }
 
     private void packr(Jvm jvm) throws IOException {
-        jvm.download(utvidelse.getJvmUtvidelse().getUrl(jvm), toAbsolutePath("build/launcher/jdk"));
-        jvm.unpack(toAbsolutePath("build/launcher/jdk"));
         jvm.jlink(
                 toAbsolutePath("build/launcher/jdk"),
                 utvidelse.getJvmUtvidelse().getModules(),
