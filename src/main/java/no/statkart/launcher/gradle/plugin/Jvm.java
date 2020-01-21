@@ -20,9 +20,14 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 enum Jvm {
@@ -155,9 +160,33 @@ enum Jvm {
                 } else {
                     Files.createDirectories(path.getParent());
                     Files.copy(tarArchiveInputStream, path, StandardCopyOption.REPLACE_EXISTING);
+                    Files.setPosixFilePermissions(path, getPermissions(entry.getMode()));
                 }
             }
         }
+    }
+
+    private final static Map<Integer, PosixFilePermission> allPermissions = new HashMap<Integer, PosixFilePermission>(){{
+        put(8, PosixFilePermission.OWNER_READ);
+        put(7, PosixFilePermission.OWNER_WRITE);
+        put(6, PosixFilePermission.OWNER_EXECUTE);
+        put(5, PosixFilePermission.GROUP_READ);
+        put(4, PosixFilePermission.GROUP_WRITE);
+        put(3, PosixFilePermission.GROUP_EXECUTE);
+        put(2, PosixFilePermission.OTHERS_READ);
+        put(1, PosixFilePermission.OTHERS_WRITE);
+        put(0, PosixFilePermission.OTHERS_EXECUTE);
+    }};
+
+    Set<PosixFilePermission> getPermissions(int mode) {
+        Set<PosixFilePermission> result = new HashSet<>();
+        for (int bit = 0; bit < 9; bit++) {
+            int set = (mode >> bit) & 1;
+            if (set == 1) {
+                result.add(allPermissions.get(bit));
+            }
+        }
+        return result;
     }
 
     private static Jvm jvmOfCurrentlyRunningOS() {
