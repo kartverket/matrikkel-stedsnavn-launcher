@@ -35,6 +35,8 @@ enum Jvm {
     LINUX("linux"),
     OSX("osx");
 
+    private static final int MAX_MODE = 511; // Octal 0777
+    private static final int MIN_MODE = 0;
     private final String alias;
 
     Jvm(String alias) {
@@ -166,7 +168,7 @@ enum Jvm {
         }
     }
 
-    private final static Map<Integer, PosixFilePermission> allPermissions = new HashMap<Integer, PosixFilePermission>(){{
+    private final static Map<Integer, PosixFilePermission> allPermissions = new HashMap<>() {{
         put(8, PosixFilePermission.OWNER_READ);
         put(7, PosixFilePermission.OWNER_WRITE);
         put(6, PosixFilePermission.OWNER_EXECUTE);
@@ -179,6 +181,9 @@ enum Jvm {
     }};
 
     Set<PosixFilePermission> getPermissions(int mode) {
+        if (mode > MAX_MODE || mode < MIN_MODE) {
+            throw new RuntimeException("Invalid mode 0" + Integer.toOctalString(mode));
+        }
         Set<PosixFilePermission> result = new HashSet<>();
         for (int bit = 0; bit < 9; bit++) {
             int set = (mode >> bit) & 1;

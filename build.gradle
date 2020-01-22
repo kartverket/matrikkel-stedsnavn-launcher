@@ -27,6 +27,8 @@ dependencies {
     serverImplementation libraries.getdown_core
     serverImplementation libraries.slf4j_api
     serverCompileOnly libraries.servlet_api
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'org.assertj:assertj-core:3.14.0'
 
     api libraries.commons_compress
     api libraries.jsign

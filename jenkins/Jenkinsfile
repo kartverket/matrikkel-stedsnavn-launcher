@@ -26,6 +26,16 @@ pipeline {
                 bat "gradlew.bat assemble"
             }
         }
-    }
 
+        stage('Test launcher') {
+            steps {
+                bat "gradlew.bat test"
+            }
+            post {
+                always {
+                    junit 'build/test-results/test/*.xml'
+                }
+            }
+        }
+    }
 }
