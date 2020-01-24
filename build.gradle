@@ -5,7 +5,6 @@ plugins {
 }
 
 apply from: 'gradle/defaultBuildProperties.gradle'
-apply from: 'gradle/libraries.gradle'
 
 group = 'no.statkart.launcher'
 version = launcher_version
@@ -23,16 +22,17 @@ sourceSets {
 }
 
 dependencies {
-    clientImplementation libraries.getdown_launcher
-    serverImplementation libraries.getdown_core
-    serverImplementation libraries.slf4j_api
-    serverCompileOnly libraries.servlet_api
+    clientImplementation 'com.threerings.getdown:getdown-launcher:1.8.6@jar'
+    serverImplementation 'com.threerings.getdown:getdown-core:1.8.6'
+    serverImplementation 'org.slf4j:slf4j-api:1.8.0-beta4'
+    serverCompileOnly 'javax.servlet:javax.servlet-api:3.1.0'
+
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.assertj:assertj-core:3.14.0'
 
-    api libraries.commons_compress
-    api libraries.jsign
-    api libraries.seven_z
+    api 'org.apache.commons:commons-compress:1.19'
+    api 'net.jsign:jsign-core:2.1'
+    api 'org.tukaani:xz:1.8'
 }
 
 gradlePlugin {
@@ -46,8 +46,10 @@ gradlePlugin {
 }
 
 // Minimumskrav til java for å bygge launcher
-sourceCompatibility = JavaVersion.VERSION_11
-targetCompatibility = JavaVersion.VERSION_11
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
 
 // Minimumskrav til java for å bygge og kjøre klientdelen av launcher
 compileClientJava {
@@ -62,7 +64,7 @@ compileServerJava {
 }
 
 task clientJar(type: Jar) {
-    archiveAppendix.set('client')
+    archiveAppendix = 'client'
     from sourceSets.client.output
     destinationDirectory.set(file('build/client/lib'))
     manifest {
@@ -74,7 +76,7 @@ task clientJar(type: Jar) {
 }
 
 task serverJar(type: Jar) {
-    archiveAppendix.set('server')
+    archiveAppendix = 'server'
     from sourceSets.server.output
     destinationDirectory.set(file('build/server/lib'))
     manifest {
