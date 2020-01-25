@@ -22,7 +22,6 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
@@ -79,23 +78,19 @@ enum Jvm {
         if (Files.exists(destination)) {
             return;
         }
-        Jvm currentOS = jvmOfCurrentlyRunningOS();
-        Optional<Path> jlink = Files.walk(dir.resolve(currentOS.alias))
-                .filter(path -> path.endsWith("jlink") || path.endsWith("jlink.exe"))
-                .findFirst();
-        if (jlink.isEmpty()) {
-            throw new IllegalArgumentException("Cannot find jlink in " + dir);
-        }
-        String cmd = jlink.get().toString()
-                + " --module-path " + getJModsDirectory(source)
-                + " --add-modules " + String.join(",", modules)
-                + " --include-locales " + String.join(",", locales)
-                + " --output " + destination;
+        Path jlink = findJlinkExecutable(dir, jvmOfCurrentlyRunningOS());
+        String[] cmd = { jlink.toString()
+                , "--module-path" , getJModsDirectory(source).toString()
+                , "--add-modules" , String.join(",", modules)
+                , "--include-locales" , String.join(",", locales)
+                , "--output" , destination.toString()
+        };
 //        System.out.println("jlink cwd=" + source.toFile());
-//        System.out.println("jlink cmd=" + cmd);
+//        System.out.println("jlink cmd=" + String.join(" ", cmd));
         Process prosess = Runtime.getRuntime().exec(cmd, null, source.toFile());
+        int status;
         try {
-            prosess.waitFor();
+            status = prosess.waitFor();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -106,6 +101,17 @@ enum Jvm {
         String stderr = streamToString(prosess.getErrorStream());
         if (!stderr.isEmpty()) {
             System.err.println(stderr);
+        }
+        if (status != 0) {
+            System.err.println("jlink returned status " + status + "\n\tcommand: " + String.join(" ", cmd));
+        }
+    }
+
+    private static Path findJlinkExecutable(Path dir, Jvm jvm) throws IOException {
+        Path suitableJdkDir = dir.resolve(jvm.alias);
+        try (Stream<Path> files = Files.walk(suitableJdkDir)) {
+            return files.filter(path -> path.endsWith("jlink") || path.endsWith("jlink.exe"))
+                    .findFirst().orElseThrow(() -> new IllegalArgumentException("Cannot find jlink in " + suitableJdkDir));
         }
     }
 
