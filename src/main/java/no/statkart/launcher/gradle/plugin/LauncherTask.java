@@ -336,5 +336,4 @@ public class LauncherTask extends DefaultTask {
             execSpecs.classpath(getPackrJar());
         }).assertNormalExitValue();
     }
-
 }

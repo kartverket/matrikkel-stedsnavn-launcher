@@ -29,6 +29,7 @@ dependencies {
 
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.assertj:assertj-core:3.14.0'
+    testImplementation 'org.mockito:mockito-core:2.19.1'
 
     api 'org.apache.commons:commons-compress:1.19'
     api 'net.jsign:jsign-core:2.1'

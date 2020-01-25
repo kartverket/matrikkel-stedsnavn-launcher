@@ -20,27 +20,25 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.PosixFilePermission;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 enum Jvm {
-    WINDOWS("windows"),
-    LINUX("linux"),
-    OSX("osx");
+    WINDOWS("windows", new NoopPermissionSetter()),
+    LINUX("linux", new NixPermissionSetter()),
+    OSX("osx", new NixPermissionSetter());
 
-    private static final int MAX_MODE = 511; // Octal 0777
-    private static final int MIN_MODE = 0;
     private final String alias;
 
-    Jvm(String alias) {
+    BiFunction<TarArchiveEntry, Path, IOException> permissionSetter;
+    private Jvm currentOsJvm;
+
+    Jvm(String alias, BiFunction<TarArchiveEntry, Path, IOException> permissionSetter) {
         this.alias = alias;
+        this.permissionSetter = permissionSetter;
     }
 
     String getAlias() {
@@ -135,7 +133,7 @@ enum Jvm {
     }
 
     private void unzip(Path inputPath, Path outputDirPath) throws IOException {
-        try (FileSystem zipFs = FileSystems.newFileSystem(inputPath, (ClassLoader) null)) {
+        try (FileSystem zipFs = FileSystems.newFileSystem(inputPath, null)) {
             Path zipRoot = zipFs.getPath("/");
             Files.walkFileTree(zipRoot, new SimpleFileVisitor<>() {
                 @Override
@@ -162,47 +160,31 @@ enum Jvm {
                 } else {
                     Files.createDirectories(path.getParent());
                     Files.copy(tarArchiveInputStream, path, StandardCopyOption.REPLACE_EXISTING);
-                    Files.setPosixFilePermissions(path, getPermissions(entry.getMode()));
+                    setPermissions(entry, path);
                 }
             }
         }
     }
 
-    private final static Map<Integer, PosixFilePermission> allPermissions = new HashMap<>() {{
-        put(8, PosixFilePermission.OWNER_READ);
-        put(7, PosixFilePermission.OWNER_WRITE);
-        put(6, PosixFilePermission.OWNER_EXECUTE);
-        put(5, PosixFilePermission.GROUP_READ);
-        put(4, PosixFilePermission.GROUP_WRITE);
-        put(3, PosixFilePermission.GROUP_EXECUTE);
-        put(2, PosixFilePermission.OTHERS_READ);
-        put(1, PosixFilePermission.OTHERS_WRITE);
-        put(0, PosixFilePermission.OTHERS_EXECUTE);
-    }};
-
-    Set<PosixFilePermission> getPermissions(int mode) {
-        if (mode > MAX_MODE || mode < MIN_MODE) {
-            throw new RuntimeException("Invalid mode 0" + Integer.toOctalString(mode));
+    void setPermissions(TarArchiveEntry entry, Path path) throws IOException {
+        IOException thrown = jvmOfCurrentlyRunningOS().permissionSetter.apply(entry, path);
+        if (thrown != null) {
+            throw thrown;
         }
-        Set<PosixFilePermission> result = new HashSet<>();
-        for (int bit = 0; bit < 9; bit++) {
-            int set = (mode >> bit) & 1;
-            if (set == 1) {
-                result.add(allPermissions.get(bit));
-            }
-        }
-        return result;
     }
 
-    private static Jvm jvmOfCurrentlyRunningOS() {
-        String name = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
-        if (name.contains("nux")) {
-            return Jvm.LINUX;
+    private Jvm jvmOfCurrentlyRunningOS() {
+        if (currentOsJvm == null) {
+            String name = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
+            if (name.contains("nux")) {
+                currentOsJvm = Jvm.LINUX;
+            } else if (name.contains("mac")) {
+                currentOsJvm = Jvm.OSX;
+            } else {
+                currentOsJvm = Jvm.WINDOWS;
+            }
         }
-        if (name.contains("mac")) {
-            return Jvm.OSX;
-        }
-        return Jvm.WINDOWS;
+        return currentOsJvm;
     }
 
     private String streamToString(InputStream is) throws IOException {
@@ -214,5 +196,4 @@ enum Jvm {
         }
         return result.toString(StandardCharsets.UTF_8).trim();
     }
-
 }
