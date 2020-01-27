@@ -139,7 +139,8 @@ enum Jvm {
     }
 
     private void unzip(Path inputPath, Path outputDirPath) throws IOException {
-        try (FileSystem zipFs = FileSystems.newFileSystem(inputPath, null)) {
+        //noinspection RedundantCast (for Java 13, som overloader newFileSystem())
+        try (FileSystem zipFs = FileSystems.newFileSystem(inputPath, (ClassLoader) null)) {
             Path zipRoot = zipFs.getPath("/");
             Files.walkFileTree(zipRoot, new SimpleFileVisitor<>() {
                 @Override
