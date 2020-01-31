@@ -10,6 +10,8 @@ import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.logging.Handler;
@@ -47,7 +49,7 @@ public class Wrapper {
             work.skrivLoginParametre(loginParametre);
             loggTilFil(workMappe + "/launcher.log");
             ikkeLoggPassordetFra(loginParametre);
-            leggTilEkstraParametre(workMappe + "/extra.txt", loginParametre);
+            leggTilEkstraParametre(workMappe + "/extra.txt", loginParametre, args);
             GetdownApp.main(new String[]{workMappe});
         } catch (Exception e) {
             e.printStackTrace();
@@ -137,9 +139,12 @@ public class Wrapper {
         return input.replaceAll("\\b\\Q" + String.copyValueOf(passord) + "\\E\\b", "***");
     }
 
-    private static void leggTilEkstraParametre(String destination, LoginParametre loginParametre) throws IOException {
+    private static void leggTilEkstraParametre(String destination, LoginParametre loginParametre, String[] args) throws IOException {
+        List<String> lines = new ArrayList<>();
+        lines.add("-Xmx" + loginParametre.getHeap() + "m");
+        lines.addAll(Arrays.asList(args));
         Path p = Paths.get(destination);
-        Files.writeString(p, "-Xmx" + loginParametre.getHeap() + "m");
+        Files.write(p, lines);
     }
 
 }
