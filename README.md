@@ -21,9 +21,9 @@ launcher {
     // Dette er versjonen på matrikkelens launcher
     version '1.2.4'
     jvm {
-        urlWindows = 'http://devbin.statkart.no:8070/bin/java/jdk/openjdk-12.0.2_windows-x64_bin.zip'
-        urlLinux = 'http://devbin.statkart.no:8070/bin/java/jdk/openjdk-12.0.2_linux-x64_bin.tar.gz'
-        urlOsx = 'http://devbin.statkart.no:8070/bin/java/jdk/openjdk-12.0.2_osx-x64_bin.tar.gz'
+        urlWindows = 'https://devbin.statkart.no/bin/java/jdk/openjdk-12.0.2_windows-x64_bin.zip'
+        urlLinux = 'https://devbin.statkart.no/bin/java/jdk/openjdk-12.0.2_linux-x64_bin.tar.gz'
+        urlOsx = 'https://devbin.statkart.no/bin/java/jdk/openjdk-12.0.2_osx-x64_bin.tar.gz'
         modules = ['java.sql', 'java.desktop', 'java.naming', 'java.rmi', 'java.management', 'jdk.localedata']
         locales = ['no']
     }
