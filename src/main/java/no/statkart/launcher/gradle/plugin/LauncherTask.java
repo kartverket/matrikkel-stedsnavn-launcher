@@ -3,6 +3,7 @@ package no.statkart.launcher.gradle.plugin;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.provider.Provider;
+import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.util.GFileUtils;
@@ -29,6 +30,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -47,8 +49,11 @@ public class LauncherTask extends DefaultTask {
         if (utvidelse == null) {
             throw new IllegalStateException("Launcher not configured");
         }
-        dependsOn(utvidelse.getClasspath()); // build jars from includeBuilds
-        dependsOn(utvidelse.getWebinfLibs()); // build jars from includeBuilds
+    }
+
+    @Nested
+    private LauncherExtension getUtvidelse() {
+        return utvidelse;
     }
 
     @TaskAction
@@ -89,7 +94,7 @@ public class LauncherTask extends DefaultTask {
         copy(utvidelse.getClasspath(), "build/launcher/war/vault");
         copy(utvidelse.getWebinf(), "build/launcher/war/WEB-INF");
         copy(utvidelse.getMetainf(), "build/launcher/war/META-INF");
-        String version = (String) getProject().getProperties().get("version");
+        String version = Objects.toString(getProject().getProperties().get("version"), null);
         if (version != null && !version.isEmpty()) {
             replace("build/launcher/war/META-INF/MANIFEST.MF", "@@version@@", version);
         }

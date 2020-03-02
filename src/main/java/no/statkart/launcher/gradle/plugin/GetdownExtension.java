@@ -1,6 +1,6 @@
 package no.statkart.launcher.gradle.plugin;
 
-import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.InputDirectory;
 
 import java.io.File;
 
@@ -21,12 +21,12 @@ public class GetdownExtension {
         this.server = server;
     }
 
-    @InputFile
+    @InputDirectory
     File getClient() {
         return client;
     }
 
-    @InputFile
+    @InputDirectory
     File getServer() {
         return server;
     }
