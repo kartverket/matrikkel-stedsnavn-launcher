@@ -180,11 +180,11 @@ public class LauncherTask extends DefaultTask {
         copyResources("lib/client", "build/launcher/lib/");
         copyResources("jdk", "build/launcher/jdk/");
         Jvm[] jvms = {Jvm.WINDOWS, Jvm.LINUX, Jvm.OSX};
-        for (Jvm jvm: jvms) {
+        for (Jvm jvm : jvms) {
             jvm.download(utvidelse.getJvmUtvidelse().getUrl(jvm), toAbsolutePath("build/launcher/jdk"));
             jvm.unpack(toAbsolutePath("build/launcher/jdk"));
         }
-        for (Jvm jvm: jvms) {
+        for (Jvm jvm : jvms) {
             packr(jvm);
         }
     }
@@ -213,6 +213,16 @@ public class LauncherTask extends DefaultTask {
             }
             config.jdk = "x";
             exec(config);
+            // MAT-12826, legg til en .bat i tillegg til .exe på windows
+            if (jvm == Jvm.WINDOWS) {
+                try (Stream<Path> paths = Files.list(toAbsolutePath("build/launcher/lib"))) {
+                    String cp = paths.map(Path::getFileName).map(Path::toString).collect(Collectors.joining(";"));
+                    append(
+                            String.format("jre\\bin\\java -cp %s %s", cp, config.mainClass),
+                            String.format("build/launcher/packr/%s/%s.bat", jvm.getAlias(), config.executable)
+                    );
+                }
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -270,7 +280,7 @@ public class LauncherTask extends DefaultTask {
     private void append(String content, String toFile) throws IOException {
         Path toFilePath = toAbsolutePath(toFile);
         Charset charset = StandardCharsets.UTF_8;
-        Files.write(toFilePath, content.getBytes(charset), StandardOpenOption.APPEND);
+        Files.write(toFilePath, content.getBytes(charset), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
     }
 
     private List<String> getResources(String resourceDir) throws IOException {
