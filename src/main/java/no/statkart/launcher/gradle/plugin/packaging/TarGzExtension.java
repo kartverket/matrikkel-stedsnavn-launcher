@@ -60,13 +60,16 @@ public class TarGzExtension implements PackagingExtension {
                     return FileVisitResult.CONTINUE;
                 }
             });
-            leggTilSymlink(topDirectory, "jre/lib/jli", taos);
-            leggTilSymlink(topDirectory, "jre/lib/amd64", taos);
+            leggTilSymlink(fromDir, topDirectory, "jre/lib/jli", taos);
+            leggTilSymlink(fromDir, topDirectory, "jre/lib/amd64", taos);
         }
         return toFile;
     }
 
-    private void leggTilSymlink(String topDirectory, String mappe, TarArchiveOutputStream output) throws IOException {
+    private void leggTilSymlink(Path fromDir, String topDirectory, String mappe, TarArchiveOutputStream output) throws IOException {
+        if (Files.exists(fromDir.resolve(mappe))) {
+            return;
+        }
         Path path = Paths.get(mappe);
         if ("osx".equals(arch)) {
             path = Paths.get(topDirectory).resolve("Contents").resolve("Resources").resolve(path);
