@@ -1,0 +1,75 @@
+#!groovy
+
+/**
+ * Pipeline for å bygge launcher
+ */
+
+@Library('common') _
+
+pipeline {
+    agent {
+        node {
+            label 'matrikkelen'
+        }
+    }
+
+    tools {
+        jdk 'Java 12 Latest'
+    }
+
+    environment {
+        // Forhindre samtidighetsproblemer
+        // Tilsvarer "Force GRADLE_USER_HOME to use workspace" i "Gradle plugin"
+        GRADLE_USER_HOME = "${WORKSPACE}/gradle"
+
+        GRADLEW_OPTIONS =
+            "-Dmaven.repo.local=${WORKSPACE}/.m2/repository " +
+            "-Dfile.encoding=UTF8 " +
+            "--refresh-dependencies " +
+            "--no-daemon " +
+            "--stacktrace"
+        GRADLEW_CMD = "./gradlew ${GRADLEW_OPTIONS}"
+    }
+    options {
+        timestamps()
+        buildDiscarder(logRotator(numToKeepStr: '15'))
+        disableConcurrentBuilds()
+        skipStagesAfterUnstable()
+    }
+
+    stages {
+        stage('Prepare launcher') {
+            steps {
+                // Den neste linjen kan fjernes etter hvert, men t.o.m. 1.2.12 må dette gjøres
+                sh 'chmod +x gradlew'
+                sh "${GRADLEW_CMD} clean"
+            }
+        }
+
+        stage('Build launcher') {
+            steps {
+                sh "${GRADLEW_CMD} assemble"
+            }
+        }
+
+        stage('Test launcher') {
+            steps {
+                sh "${GRADLEW_CMD} test"
+            }
+            post {
+                always {
+                    junit '**/build/test-results/*/*.xml'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            deleteDir()
+        }
+        cleanup {
+            sendNotifications(currentBuild.result, 'launcher')
+        }
+    }
+}
