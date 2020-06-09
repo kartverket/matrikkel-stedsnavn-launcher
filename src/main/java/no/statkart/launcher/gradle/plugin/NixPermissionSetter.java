@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 
 class NixPermissionSetter implements BiFunction<TarArchiveEntry, Path, IOException> {
+
     private static final int MAX_MODE = 511; // Octal 0777
     private static final int MIN_MODE = 0;
 
@@ -55,4 +56,5 @@ class NixPermissionSetter implements BiFunction<TarArchiveEntry, Path, IOExcepti
         }
         return null;
     }
+
 }

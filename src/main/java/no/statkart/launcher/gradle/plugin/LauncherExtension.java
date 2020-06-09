@@ -1,71 +1,31 @@
 package no.statkart.launcher.gradle.plugin;
 
 import groovy.lang.Closure;
+import org.gradle.api.Action;
+import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
-import org.gradle.api.file.ConfigurableFileCollection;
-import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputDirectory;
-import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Nested;
 import org.gradle.util.ConfigureUtil;
 
-import java.io.File;
-
 public class LauncherExtension {
 
-    private final ConfigurableFileCollection classpath;
-    private final ConfigurableFileCollection webinfLibs;
-
-    private File webinf;
-    private File metainf;
+    private final Project project;
+    private final NamedDomainObjectContainer<ClientExtension> clients;
 
     private String version;
-    private String executable;
-
     private JvmExtension jvmExt;
-    private GetdownExtension getdownExt;
-    private ArtifactsExtension artifactsExtension;
+    private ServerExtension serverExt;
 
     public LauncherExtension(Project project) {
-        classpath = project.files();
-        webinfLibs = project.files();
-    }
-
-    // Kalles vha refleksjon av gradle
-    @SuppressWarnings("unused")
-    public void classpath(Object... classpath) {
-        this.classpath.from(classpath);
+        this.project = project;
+        this.clients = project.container(ClientExtension.class);
     }
 
     // Kalles vha refleksjon av gradle
     @SuppressWarnings("unused")
     public void version(String version) {
         this.version = version;
-    }
-
-    // Kalles vha refleksjon av gradle
-    @SuppressWarnings("unused")
-    public void executable(String executable) {
-        this.executable = executable;
-    }
-
-    // Kalles vha refleksjon av gradle
-    @SuppressWarnings("unused")
-    public void webinf(File webinf) {
-        this.webinf = webinf;
-    }
-
-    // Kalles vha refleksjon av gradle
-    @SuppressWarnings("unused")
-    public void metainf(File metainf) {
-        this.metainf = metainf;
-    }
-
-    // Kalles vha refleksjon av gradle
-    @SuppressWarnings("unused")
-    public void webinfLibs(Object... webinfLibs) {
-        this.webinfLibs.from(webinfLibs);
     }
 
     // Kalles vha refleksjon av gradle
@@ -77,46 +37,20 @@ public class LauncherExtension {
 
     // Kalles vha refleksjon av gradle
     @SuppressWarnings("unused")
-    public void getdown(Closure<?> c) {
-        getdownExt = new GetdownExtension();
-        ConfigureUtil.configure(c, getdownExt);
+    public void server(Closure<?> c) {
+        serverExt = new ServerExtension(project);
+        ConfigureUtil.configure(c, serverExt);
     }
 
     // Kalles vha refleksjon av gradle
     @SuppressWarnings("unused")
-    public void artifacts(Closure<?> c) {
-        artifactsExtension = new ArtifactsExtension();
-        ConfigureUtil.configure(c, artifactsExtension);
-    }
-
-    @InputFiles
-    FileCollection getClasspath() {
-        return classpath;
+    public void clients(Action<? super NamedDomainObjectContainer<ClientExtension>> action) {
+        action.execute(clients);
     }
 
     @Input
     String getVersion() {
         return version;
-    }
-
-    @Input
-    String getExecutable() {
-        return executable;
-    }
-
-    @InputDirectory
-    File getWebinf() {
-        return webinf;
-    }
-
-    @InputDirectory
-    File getMetainf() {
-        return metainf;
-    }
-
-    @InputFiles
-    FileCollection getWebinfLibs() {
-        return webinfLibs;
     }
 
     @Nested
@@ -125,13 +59,12 @@ public class LauncherExtension {
     }
 
     @Nested
-    GetdownExtension getGetdownUtvidelse() {
-        return getdownExt;
+    ServerExtension getServerUtvidelse() {
+        return serverExt;
     }
 
-    @Nested
-    ArtifactsExtension getArtifactsUtvidelse() {
-        return artifactsExtension;
+    ClientExtension[] getKlienter() {
+        return clients.toArray(new ClientExtension[0]);
     }
 
 }

@@ -17,27 +17,29 @@ def keystore = rootProject.file(System.getenv('keystore') ?: 'launcher/keystore/
 def keystore_alias = System.getenv('keystore_alias') ?: 'selfsign'
 def keystore_password = System.getenv('keystore_password') ?: rootProject.file('launcher/keystore/selfsign.txt').text
 
-launcher {
-    // Dette er versjonen på matrikkelens launcher
-    version '1.2.4'
+auncher {
+    // Dette er versjonen på matrikkelstarteren
+    version '1.3.0'
     jvm {
-        urlWindows = 'https://devbin.statkart.no/bin/java/jdk/openjdk-12.0.2_windows-x64_bin.zip'
-        urlLinux = 'https://devbin.statkart.no/bin/java/jdk/openjdk-12.0.2_linux-x64_bin.tar.gz'
-        urlOsx = 'https://devbin.statkart.no/bin/java/jdk/openjdk-12.0.2_osx-x64_bin.tar.gz'
-        modules = ['java.sql', 'java.desktop', 'java.naming', 'java.rmi', 'java.management', 'jdk.localedata']
-        locales = ['no']
+        urlWindows = devbinBaseUrl + 'bin/java/jdk/OpenJDK11U-jdk_x64_windows_hotspot_11.0.7_10.zip'
+        urlLinux = devbinBaseUrl + 'bin/java/jdk/OpenJDK11U-jdk_x64_linux_hotspot_11.0.7_10.tar.gz'
+        urlOsx = devbinBaseUrl + 'bin/java/jdk/OpenJDK11U-jdk_x64_osx_hotspot_11.0.7_10.tar.gz'
+        modules = ['java.sql', 'java.desktop', 'java.naming', 'java.rmi', 'java.management', 'jdk.localedata', 'jdk.jdwp.agent']
+        locales = ['nb', 'nn']
     }
-    getdown {
-        client project.file('launcher/getdown/client')
-        server project.file('launcher/getdown/server')
+    server {
+        webinf project.file('launcher/webinf')
+        metainf project.file('launcher/metainf')
+        webinfLibs configurations.serverRuntimeClasspath, tasks.serverJar
+        classpath configurations.runtimeClasspath, tasks.jar
+        getdown project.file('launcher/getdown/server')
     }
-    webinf project.file('launcher/webinf')
-    metainf project.file('launcher/metainf')
-    webinfLibs configurations.serverRuntimeClasspath, tasks.serverJar
-    executable 'matrikkelklient'
-    classpath configurations.runtimeClasspath, tasks.jar
-    artifacts {
-        windows {
+    clients {
+        'matrikkelstart-windows' {
+            arch 'windows'
+            executable 'matrikkelstart'
+            icon project.file('launcher/icon/windows')
+            getdown project.file('launcher/getdown/client')
             packaging '7z'
             packagingConfig {
                 method SevenZMethod.DEFLATE
@@ -49,17 +51,30 @@ launcher {
                 alias keystore_alias
                 password keystore_password
             }
-            icon project.file('launcher/icon/windows')
         }
-        linux {
+        'matrikkelstart-windows-plain' {
+            arch 'windows'
+            executable 'matrikkelstart'
+            getdown project.file('launcher/getdown/client')
+            packaging 'zip'
+        }
+        'matrikkelstart-linux' {
+            arch 'linux'
+            executable 'matrikkelstart'
+            getdown project.file('launcher/getdown/client')
             packaging 'targz'
         }
-        osx {
-            packaging 'targz'
+        'matrikkelstart-osx' {
+            arch 'osx'
+            executable 'matrikkelstart'
             icon project.file('launcher/icon/osx/program.icns')
+            getdown project.file('launcher/getdown/client')
+            packaging 'targz'
         }
     }
 }
+tasks['launcher'].dependsOn(tasks['jar'])
+tasks['launcher'].dependsOn(tasks['serverJar'])
 tasks['assemble'].dependsOn(tasks['launcher'])
 ```
 Kikk i de filene og mappene til matrikkelklienten som er referert over for å se hva som trengs av ekstra oppsett.

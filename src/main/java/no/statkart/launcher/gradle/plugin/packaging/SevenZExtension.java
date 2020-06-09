@@ -22,8 +22,7 @@ import static java.nio.file.StandardOpenOption.WRITE;
 
 public class SevenZExtension implements PackagingExtension {
 
-    private final String arch;
-
+    private String arch;
     private String name;
     private String version;
 
@@ -31,7 +30,8 @@ public class SevenZExtension implements PackagingExtension {
     private File sfx;
     private File sfxConfig;
 
-    public SevenZExtension(String arch) {
+    @Override
+    public void setArch(String arch) {
         this.arch = arch;
     }
 
@@ -65,7 +65,7 @@ public class SevenZExtension implements PackagingExtension {
 
     @Override
     public Path execute(Path fromDir, Path toDir) throws IOException {
-        Path toFile = toDir.resolve(toFilename(name, version));
+        Path toFile = toDir.resolve(toFilename());
         Path tmp = toFile.getParent().resolve(toFile.getFileName().toString() + ".tmp");
         opprett7z(fromDir, tmp);
         lagSelfExtracting7z(tmp, toFile);
@@ -111,7 +111,7 @@ public class SevenZExtension implements PackagingExtension {
         Path sfxPath = sfx.toPath();
         Path sfxConfigPath = sfxConfig.toPath();
         String configInnhold = Files.readString(sfxConfigPath);
-        configInnhold = configInnhold.replaceAll("%klientversjon%", version);
+        configInnhold = configInnhold.replaceAll("%startversjon%", version);
         try (FileChannel out = FileChannel.open(destination, CREATE, WRITE)) {
             append(out, sfxPath);
             append(out, configInnhold);
@@ -135,11 +135,9 @@ public class SevenZExtension implements PackagingExtension {
         out.write(ByteBuffer.wrap(innhold.getBytes(StandardCharsets.UTF_8)));
     }
 
-    private String toFilename(String name, String version) {
-        if ("windows".equals(arch)) {
-            return name + "-" + arch + "-" + version + "-installer.exe";
-        }
-        return name + "-" + arch + "-" + version + "-installer";
+    private String toFilename() {
+        String filename = name + "-" + version + "-installer";
+        return "windows".equals(arch) ? filename + ".exe" : filename;
     }
 
 }

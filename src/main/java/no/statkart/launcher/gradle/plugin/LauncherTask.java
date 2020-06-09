@@ -3,7 +3,6 @@ package no.statkart.launcher.gradle.plugin;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.provider.Provider;
-import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.util.GFileUtils;
@@ -51,13 +50,7 @@ public class LauncherTask extends DefaultTask {
         }
     }
 
-    @Nested
-    private LauncherExtension getUtvidelse() {
-        return utvidelse;
-    }
-
     @TaskAction
-    @SuppressWarnings("unused")
     public void execute() throws IOException {
         lagKlienter();
         Map<String, String> artifacts = lagKlientinstallereForNedlasting();
@@ -90,21 +83,22 @@ public class LauncherTask extends DefaultTask {
     }
 
     private void opprettTjenerWebapp(Map<String, String> artifacts) throws IOException {
-        opprettPathingJar(utvidelse.getClasspath(), "build/launcher/war/vault/client-dependencies.jar");
-        copy(utvidelse.getClasspath(), "build/launcher/war/vault");
-        copy(utvidelse.getWebinf(), "build/launcher/war/WEB-INF");
-        copy(utvidelse.getMetainf(), "build/launcher/war/META-INF");
+        ServerExtension server = utvidelse.getServerUtvidelse();
+        opprettPathingJar(server.getClasspath(), "build/launcher/war/vault/client-dependencies.jar");
+        copy(server.getClasspath(), "build/launcher/war/vault");
+        copy(server.getWebinf(), "build/launcher/war/WEB-INF");
+        copy(server.getMetainf(), "build/launcher/war/META-INF");
         String version = Objects.toString(getProject().getProperties().get("version"), null);
         if (version != null && !version.isEmpty()) {
             replace("build/launcher/war/META-INF/MANIFEST.MF", "@@version@@", version);
         }
         copyResources("lib/server", "build/launcher/war/WEB-INF/lib");
-        copy(utvidelse.getWebinfLibs(), "build/launcher/war/WEB-INF/lib");
+        copy(server.getWebinfLibs(), "build/launcher/war/WEB-INF/lib");
         for (Map.Entry<String, String> e : artifacts.entrySet()) {
             replace("build/launcher/war/WEB-INF/web.xml", "@@" + e.getKey() + "@@", e.getValue());
         }
-        copy(utvidelse.getGetdownUtvidelse().getServer(), "build/launcher/war/vault");
-        replace("build/launcher/war/vault/getdown.txt", "@@code@@", asCode(utvidelse.getClasspath()));
+        copy(server.getGetdown(), "build/launcher/war/vault");
+        replace("build/launcher/war/vault/getdown.txt", "@@code@@", asCode(server.getClasspath()));
     }
 
     private String asCode(FileCollection files) {
@@ -135,7 +129,6 @@ public class LauncherTask extends DefaultTask {
         Attributes attr = manifest.getMainAttributes();
         attr.putValue("Manifest-Version", "1.0");
         attr.putValue("Class-Path", sb.toString());
-
         Path toFilePath = toAbsolutePath(toFile);
         Files.createDirectories(toFilePath.getParent());
         Files.deleteIfExists(toFilePath);
@@ -152,27 +145,14 @@ public class LauncherTask extends DefaultTask {
 
     private Map<String, String> lagKlientinstallereForNedlasting() {
         Map<String, String> artifacts = new HashMap<>();
-        artifacts.put("windows",
-                utvidelse.getArtifactsUtvidelse().getWindows().execute(
-                        toAbsolutePath("build/launcher/packr/windows"),
-                        toAbsolutePath("build/launcher/war/download"),
-                        utvidelse.getExecutable(),
-                        utvidelse.getVersion()
-                ));
-        artifacts.put("linux",
-                utvidelse.getArtifactsUtvidelse().getLinux().execute(
-                        toAbsolutePath("build/launcher/packr/linux"),
-                        toAbsolutePath("build/launcher/war/download"),
-                        utvidelse.getExecutable(),
-                        utvidelse.getVersion()
-                ));
-        artifacts.put("osx",
-                utvidelse.getArtifactsUtvidelse().getOsx().execute(
-                        toAbsolutePath("build/launcher/packr/osx"),
-                        toAbsolutePath("build/launcher/war/download"),
-                        utvidelse.getExecutable(),
-                        utvidelse.getVersion()
-                ));
+        for (ClientExtension klient : utvidelse.getKlienter()) {
+            artifacts.put(klient.getName(),
+                    klient.execute(
+                            toAbsolutePath("build/launcher/packr/" + klient.getName()),
+                            toAbsolutePath("build/launcher/war/download"),
+                            utvidelse.getVersion()
+                    ));
+        }
         return artifacts;
     }
 
@@ -184,58 +164,65 @@ public class LauncherTask extends DefaultTask {
             jvm.download(utvidelse.getJvmUtvidelse().getUrl(jvm), toAbsolutePath("build/launcher/jdk"));
             jvm.unpack(toAbsolutePath("build/launcher/jdk"));
         }
+        // Dette steget må utføres etter at alle jvm'ene er lastet ned
         for (Jvm jvm : jvms) {
-            packr(jvm);
+            jvm.jlink(
+                    toAbsolutePath("build/launcher/jdk"),
+                    utvidelse.getJvmUtvidelse().getModules(),
+                    utvidelse.getJvmUtvidelse().getLocales()
+            );
+        }
+        for (ClientExtension klient : utvidelse.getKlienter()) {
+            packr(klient);
         }
     }
 
-    private void packr(Jvm jvm) throws IOException {
-        jvm.jlink(
-                toAbsolutePath("build/launcher/jdk"),
-                utvidelse.getJvmUtvidelse().getModules(),
-                utvidelse.getJvmUtvidelse().getLocales()
-        );
+    private void packr(ClientExtension klient) throws IOException {
+        Jvm jvm = Jvm.fraAlias(klient.getArch()).orElseThrow();
         try {
+            File bootClasspath = null;
             PackrConfig config = new PackrConfig();
             config.platform = jvm;
-            config.executable = utvidelse.getExecutable();
-            config.mainClass = "no.statkart.launcher.client.Wrapper";
+            config.executable = klient.getExecutable();
+            config.mainClass = "no.statkart.launcher.client.Launcher";
             config.cacheJre = toAbsolutePath("build/launcher/jdk/" + jvm.getAlias() + "-min").toFile();
-            config.outDir = toAbsolutePath("build/launcher/packr/" + jvm.getAlias()).toFile();
+            config.outDir = toAbsolutePath("build/launcher/packr/" + klient.getName()).toFile();
             try (Stream<Path> paths = Files.list(toAbsolutePath("build/launcher/lib"))) {
                 config.classpath = paths.map(Path::toString).collect(Collectors.toList());
             }
             if (jvm == Jvm.OSX) {
-                File icns = utvidelse.getArtifactsUtvidelse().getOsx().getIcon();
-                if (icns != null) {
-                    config.iconResource = icns;
-                }
+                config.iconResource = klient.getIcon();
+            }
+            if (jvm == Jvm.WINDOWS) {
+                // Gjeldende workaround er å legge en hacket versjon av packr*.exe
+                // NB: Denne må komme først på classpath!
+                bootClasspath = klient.getIcon();
             }
             config.jdk = "x";
-            exec(config);
+            exec(config, bootClasspath);
             // MAT-12826, legg til en .bat i tillegg til .exe på windows
             if (jvm == Jvm.WINDOWS) {
                 try (Stream<Path> paths = Files.list(toAbsolutePath("build/launcher/lib"))) {
                     String cp = paths.map(Path::getFileName).map(Path::toString).collect(Collectors.joining(";"));
                     append(
                             String.format("jre\\bin\\java -cp %s %s", cp, config.mainClass),
-                            String.format("build/launcher/packr/%s/%s.bat", jvm.getAlias(), config.executable)
+                            String.format("build/launcher/packr/%s/%s.bat", klient.getName(), config.executable)
                     );
                 }
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        copyResources("jdk/fonts", "build/launcher/packr/" + topDirectory(jvm) + "/jre/lib/fonts");
-        copy(utvidelse.getGetdownUtvidelse().getClient(), "build/launcher/packr/" + topDirectory(jvm) + "/work");
-        replace("build/launcher/packr/" + topDirectory(jvm) + "/work/client.properties", "@@version@@", utvidelse.getVersion());
+        copyResources("jdk/fonts", "build/launcher/packr/" + topDirectory(klient) + "/jre/lib/fonts");
+        copy(klient.getGetdown(), "build/launcher/packr/" + topDirectory(klient) + "/work");
+        replace("build/launcher/packr/" + topDirectory(klient) + "/work/client.properties", "@@version@@", utvidelse.getVersion());
     }
 
-    private String topDirectory(Jvm jvm) {
-        if (jvm == Jvm.OSX) {
-            return jvm.getAlias() + "/Contents/Resources";
+    private String topDirectory(ClientExtension klient) {
+        if ("osx".equals(klient.getArch())) {
+            return klient.getName() + "/Contents/Resources";
         }
-        return jvm.getAlias();
+        return klient.getName();
     }
 
     private void copy(FileCollection files, String toDir) {
@@ -338,15 +325,12 @@ public class LauncherTask extends DefaultTask {
         });
     }
 
-    private void exec(PackrConfig config) {
+    private void exec(PackrConfig config, File bootClasspath) {
         getProject().javaexec(execSpecs -> {
             config.decorateExecSpecs(execSpecs);
             execSpecs.setMain("com.badlogicgames.packr.Packr");
-            // Gjeldende workaround er å legge en hacket versjon av packr*.exe
-            // NB: Denne må komme først på classpath!
-            File windows = utvidelse.getArtifactsUtvidelse().getWindows().getIcon();
-            if (windows != null) {
-                execSpecs.classpath(windows);
+            if (bootClasspath != null) {
+                execSpecs.classpath(bootClasspath);
             }
             execSpecs.classpath(getPackrJar());
         }).assertNormalExitValue();

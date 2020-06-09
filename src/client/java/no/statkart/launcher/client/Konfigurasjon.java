@@ -17,6 +17,10 @@ class Konfigurasjon {
         return properties.getProperty(key.getKey());
     }
 
+    static synchronized boolean is(Konfigurasjonsverdi key) {
+        return "true".equalsIgnoreCase(get(key));
+    }
+
     private static Properties getProperties() {
         Path propPath = Paths.get(Work.SOURCE).resolve("client.properties");
         if (!Files.exists(propPath)) {

@@ -36,7 +36,7 @@ class Work {
      * Finn arbeidsmappen som vi har skriverettigheter til.
      * Opprett den dersom den ikke finnes fra før.
      */
-    String finnEllerOpprettWorkMappe(LoginParametre loginParametre) throws IOException {
+    String finnEllerOpprettWorkMappe(Parametre loginParametre) throws IOException {
         String tjener = loginParametre.getTjener();
         String mappenavn = tjenerTilMappenavn(tjener);
         Path destination = rot.resolve(mappenavn);
@@ -80,7 +80,7 @@ class Work {
         }
     }
 
-    void skrivLoginParametre(LoginParametre loginParametre) throws IOException {
+    void skrivLoginParametre(Parametre loginParametre) throws IOException {
         String tjener = loginParametre.getTjener();
         String mappenavn = tjenerTilMappenavn(tjener);
         Path destination = rot.resolve(mappenavn);
@@ -92,15 +92,15 @@ class Work {
         Files.deleteIfExists(destination.resolve("touch.txt"));
     }
 
-    List<LoginParametre> lesLoginParametre() throws IOException {
+    List<Parametre> lesInputParametre() throws IOException {
         if (!Files.exists(rot)) {
             return new ArrayList<>();
         }
         try (Stream<Path> paths = Files.walk(rot)) {
             return paths.filter(this::erFilMedLoginHistorikk)
                     .map(this::tilProperties)
-                    .map(LoginParametre::new)
-                    .sorted(Comparator.comparingLong(LoginParametre::getOppdatert).reversed())
+                    .map(Parametre::new)
+                    .sorted(Comparator.comparingLong(Parametre::getOppdatert).reversed())
                     .collect(Collectors.toList());
         }
     }

@@ -12,8 +12,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
 
@@ -32,7 +34,7 @@ import java.util.logging.Logger;
  * </li>
  * </ul>
  */
-public class Wrapper {
+public class Launcher {
 
     private static final OS SYSTEM = currentSystem();
 
@@ -43,19 +45,54 @@ public class Wrapper {
     public static void main(String... args) {
         try {
             Work work = new Work(SYSTEM.finnRot());
-            List<LoginParametre> forslagTilParametre = work.lesLoginParametre();
-            LoginParametre loginParametre = Login.innhentGyldigeLoginParametre(forslagTilParametre);
-            String workMappe = work.finnEllerOpprettWorkMappe(loginParametre);
-            work.skrivLoginParametre(loginParametre);
+            Parametre parametre = finnParametre(work);
+            if (parametre == null) {
+                System.exit(0);
+            }
+            parametre.kontroller();
+            String workMappe = work.finnEllerOpprettWorkMappe(parametre);
+            work.skrivLoginParametre(parametre);
             loggTilFil(workMappe + "/launcher.log");
-            ikkeLoggPassordetFra(loginParametre);
-            leggTilEkstraParametre(workMappe + "/extra.txt", loginParametre, args);
+            ikkeLoggPassordetFra(parametre);
+            leggTilEkstraParametre(workMappe + "/extra.txt", parametre, args);
+            registrerLauncherVersjon();
             GetdownApp.main(new String[]{workMappe});
         } catch (Exception e) {
             e.printStackTrace();
             System.err.println(String.format("Kunne ikke starte klienten: %s", e.getMessage()));
             System.exit(-1);
         }
+    }
+
+    private static Parametre finnParametre(Work work) throws Exception {
+        Parametre standard = new Parametre()
+                .medTjener(Konfigurasjon.get(Konfigurasjonsverdi.DEFAULT_SERVER))
+                .medHeap(Konfigurasjon.get(Konfigurasjonsverdi.DEFAULT_HEAP));
+        if (!Input.vis()) {
+            return standard;
+        }
+        List<Parametre> forslagTilParametre = work.lesInputParametre();
+        fyllInnManglendeStandardVerdier(forslagTilParametre, standard);
+        if (Input.visTjener()) {
+            if (forslagTilParametre.isEmpty()) {
+                forslagTilParametre.add(standard);
+            }
+        } else {
+            forslagTilParametre = Collections.singletonList(
+                    forslagTilParametre.stream()
+                            .filter(p -> Objects.equals(standard.getTjener(), p.getTjener()))
+                            .findFirst().orElse(standard)
+            );
+        }
+        return Input.innhentParametre(forslagTilParametre);
+    }
+
+    private static void fyllInnManglendeStandardVerdier(List<Parametre> paramList, Parametre standard) {
+        paramList.forEach(p -> {
+            if (p.getHeap() == null) {
+                p.medHeap(standard.getHeap());
+            }
+        });
     }
 
     private static OS currentSystem() {
@@ -125,7 +162,10 @@ public class Wrapper {
     /**
      * Pass på at passordet aldri blir skrevet til disk (logg).
      */
-    private static void ikkeLoggPassordetFra(LoginParametre loginParametre) {
+    private static void ikkeLoggPassordetFra(Parametre loginParametre) {
+        if (loginParametre.getPassord() == null) {
+            return;
+        }
         Logger logger = Logger.getLogger("");
         for (Handler handler : logger.getHandlers()) {
             handler.setFilter(record -> {
@@ -139,12 +179,22 @@ public class Wrapper {
         return input.replaceAll("\\b\\Q" + String.copyValueOf(passord) + "\\E\\b", "***");
     }
 
-    private static void leggTilEkstraParametre(String destination, LoginParametre loginParametre, String[] args) throws IOException {
+    private static void leggTilEkstraParametre(String destination, Parametre loginParametre, String[] args) throws IOException {
         List<String> lines = new ArrayList<>();
         lines.add("-Xmx" + loginParametre.getHeap() + "m");
         lines.addAll(Arrays.asList(args));
         Path p = Paths.get(destination);
         Files.write(p, lines);
+    }
+
+    /**
+     * Versjonen brukes til å sjekke om brukeren må oppdatere launcheren sin.
+     */
+    private static void registrerLauncherVersjon() {
+        String versjon = Konfigurasjon.get(Konfigurasjonsverdi.VERSION);
+        if (versjon != null) {
+            System.setProperty("app.launcher.version", versjon);
+        }
     }
 
 }

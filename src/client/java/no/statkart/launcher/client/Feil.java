@@ -10,35 +10,44 @@ import java.net.UnknownHostException;
 class Feil {
 
     private final Exception exception;
-    private final LoginParametre loginParametre;
+    private final Parametre inputParametre;
 
-    Feil(Exception exception, LoginParametre loginParametre) {
+    Feil(Exception exception, Parametre inputParametre) {
         this.exception = exception;
-        this.loginParametre = loginParametre;
+        this.inputParametre = inputParametre;
     }
 
     boolean erTjenerfeil() {
         return exception instanceof MalformedURLException
-                || exception instanceof FileNotFoundException;
+                || exception instanceof FileNotFoundException
+                || exception instanceof SSLException
+                || exception instanceof ConnectException
+                || exception instanceof UnknownHostException
+                || harTjenersuffiks()
+                || erUgyldigTjenerformat();
+    }
+
+    boolean erHeapFeil() {
+        return exception instanceof NumberFormatException;
     }
 
     boolean erBrukerPassordFeil() {
-        return !erTjenerfeil();
+        return !erTjenerfeil() && !erHeapFeil();
     }
 
-    LoginParametre getLoginParametre() {
-        return loginParametre;
+    Parametre getInputParametre() {
+        return inputParametre;
     }
 
     String tilFeilmelding() {
         if (exception instanceof MalformedURLException) {
-            return "Feil inntastet tjeneradresse. Skal være på formatet <protokoll>://<tjener>[:<port>]/";
+            return "Feil inntastet tjeneradresse. Skal være på formatet <protokoll>://<tjener>[:<port>]";
         }
-        if (harSuffiks(loginParametre.getTjener())) {
+        if (harTjenersuffiks()) {
             return "Feil inntastet tjeneradresse. Skal bare ha tjenernavn.";
         }
-        if (erUgyldigTjenerformat(loginParametre.getTjener())) {
-            return "Feil inntastet tjeneradresse. Skal være på formatet <protokoll>://<tjener>[:<port>]/";
+        if (erUgyldigTjenerformat()) {
+            return "Feil inntastet tjeneradresse. Skal være på formatet <protokoll>://<tjener>[:<port>]";
         }
         if (exception instanceof FileNotFoundException) {
             return "Tjenerfeil. Vennligst kontroller om dette er en gyldig tjener.";
@@ -56,15 +65,17 @@ class Feil {
         return "Ugyldig brukernavn og/eller passord";
     }
 
-    private boolean harSuffiks(String tjener) {
+    private boolean harTjenersuffiks() {
         try {
+            String tjener = inputParametre.getTjener();
             return !"".equals(new URL(tjener).getPath().replaceFirst("/", ""));
         } catch (MalformedURLException e) {
             return true;
         }
     }
 
-    private boolean erUgyldigTjenerformat(String tjener) {
+    private boolean erUgyldigTjenerformat() {
+        String tjener = inputParametre.getTjener();
         return tjener == null || !tjener.matches("^[\\w]+://[^/]+/?$");
     }
 

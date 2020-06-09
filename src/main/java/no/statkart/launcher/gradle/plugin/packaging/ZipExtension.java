@@ -15,12 +15,12 @@ import java.nio.file.attribute.BasicFileAttributes;
 
 public class ZipExtension implements PackagingExtension {
 
-    private final String arch;
-
+    private String arch;
     private String name;
     private String version;
 
-    public ZipExtension(String arch) {
+    @Override
+    public void setArch(String arch) {
         this.arch = arch;
     }
 
@@ -61,14 +61,14 @@ public class ZipExtension implements PackagingExtension {
     }
 
     private String toFilename() {
-        return name + "-" + arch + "-" + version + ".zip";
+        return name + "-" + version + ".zip";
     }
 
     private String tilTopDirectory() {
         if ("osx".equals(arch)) {
-            return name + "-" + arch + "-" + version + ".app";
+            return name + "-" + version + ".app";
         }
-        return name + "-" + arch + "-" + version;
+        return name + "-" + version;
     }
 
 }

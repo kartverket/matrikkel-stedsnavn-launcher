@@ -5,33 +5,62 @@ import no.statkart.launcher.gradle.plugin.packaging.PackagingExtension;
 import no.statkart.launcher.gradle.plugin.packaging.SevenZExtension;
 import no.statkart.launcher.gradle.plugin.packaging.TarGzExtension;
 import no.statkart.launcher.gradle.plugin.packaging.ZipExtension;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputFile;
 import org.gradle.util.ConfigureUtil;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class ArtifactExtension {
+public class ClientExtension {
 
-    private final String arch;
+    private final String name;
 
+    private String arch;
+    private String executable;
     private File icon;
+    private File getdown;
     private PackagingExtension packagingExt;
     private SigningExtension signingExt;
 
-    ArtifactExtension(String arch) {
+    public ClientExtension(String name) {
+        this.name = name;
+    }
+
+    // Kalles vha refleksjon av gradle
+    @SuppressWarnings("unused")
+    public void arch(String arch) {
         this.arch = arch;
+    }
+
+    // Kalles vha refleksjon av gradle
+    @SuppressWarnings("unused")
+    public void executable(String executable) {
+        this.executable = executable;
+    }
+
+    // Kalles vha refleksjon av gradle
+    @SuppressWarnings("unused")
+    public void icon(File icon) {
+        this.icon = icon;
+    }
+
+    // Kalles vha refleksjon av gradle
+    @SuppressWarnings("unused")
+    public void getdown(File getdown) {
+        this.getdown = getdown;
     }
 
     // Kalles vha refleksjon av gradle
     @SuppressWarnings("unused")
     public void packaging(String packaging) {
         if ("7z".equals(packaging)) {
-            packagingExt = new SevenZExtension(arch);
+            packagingExt = new SevenZExtension();
         } else if ("targz".equals(packaging)) {
-            packagingExt = new TarGzExtension(arch);
+            packagingExt = new TarGzExtension();
         } else if ("zip".equals(packaging)) {
-            packagingExt = new ZipExtension(arch);
+            packagingExt = new ZipExtension();
         } else {
             throw new IllegalArgumentException("Ukjent innpakkingsmetode '" + packaging + "'");
         }
@@ -50,23 +79,34 @@ public class ArtifactExtension {
         ConfigureUtil.configure(c, signingExt);
     }
 
-    // Kalles vha refleksjon av gradle
-    @SuppressWarnings("unused")
-    public void icon(File icon) {
-        this.icon = icon;
+    public String getName() {
+        return name;
     }
 
+    @Input
+    public String getArch() {
+        return arch;
+    }
+
+    @Input
+    public String getExecutable() {
+        return executable;
+    }
+
+    @InputFile
     public File getIcon() {
         return icon;
     }
 
-    public PackagingExtension getPackagingConfig() {
-        return packagingExt;
+    @InputFile
+    public File getGetdown() {
+        return getdown;
     }
 
-    String execute(Path fromDirPath, Path toDirPath, String name, String version) {
+    String execute(Path fromDirPath, Path toDirPath, String version) {
         try {
             Files.createDirectories(toDirPath);
+            packagingExt.setArch(arch);
             packagingExt.setName(name);
             packagingExt.setVersion(version);
             Path toFilePath = packagingExt.execute(fromDirPath, toDirPath);

@@ -64,8 +64,12 @@ compileServerJava {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
 task clientJar(type: Jar) {
-    archiveAppendix = 'client'
+    archiveAppendix.set('client')
     from sourceSets.client.output
     destinationDirectory.set(file('build/client/lib'))
     manifest {
@@ -77,7 +81,7 @@ task clientJar(type: Jar) {
 }
 
 task serverJar(type: Jar) {
-    archiveAppendix = 'server'
+    archiveAppendix.set('server')
     from sourceSets.server.output
     destinationDirectory.set(file('build/server/lib'))
     manifest {

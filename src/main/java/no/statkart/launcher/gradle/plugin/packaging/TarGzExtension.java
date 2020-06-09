@@ -17,12 +17,12 @@ import java.nio.file.attribute.BasicFileAttributes;
 
 public class TarGzExtension implements PackagingExtension {
 
-    private final String arch;
-
+    private String arch;
     private String name;
     private String version;
 
-    public TarGzExtension(String arch) {
+    @Override
+    public void setArch(String arch) {
         this.arch = arch;
     }
 
@@ -83,14 +83,14 @@ public class TarGzExtension implements PackagingExtension {
     }
 
     private String toFilename() {
-        return name + "-" + arch + "-" + version + ".tar.gz";
+        return name + "-" + version + ".tar.gz";
     }
 
     private String tilTopDirectory() {
         if ("osx".equals(arch)) {
-            return name + "-" + arch + "-" + version + ".app";
+            return name + "-" + version + ".app";
         }
-        return name + "-" + arch + "-" + version;
+        return name + "-" + version;
     }
 
 }

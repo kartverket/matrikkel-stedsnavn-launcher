@@ -3,7 +3,11 @@ package no.statkart.launcher.client;
 enum Konfigurasjonsverdi {
     TITLE("title"),
     VERSION("version"),
-    TRY_CRENDENTIALS_USING_PATH("tryCredentialsUsingPath"),
+    INPUT_MESSAGE("input.message"),
+    INPUT_SERVER("input.server"),
+    INPUT_CREDENTIALS("input.credentials"),
+    INPUT_CREDENTIALS_VALIDATE("input.credentials.validate"),
+    INPUT_HEAP("input.heap"),
     DEFAULT_SERVER("default.server"),
     DEFAULT_HEAP("default.heap"),
     WORK_WINDOWS("work.windows"),

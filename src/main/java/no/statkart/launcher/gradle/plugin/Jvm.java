@@ -22,6 +22,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
@@ -32,12 +33,22 @@ enum Jvm {
 
     private final String alias;
 
-    BiFunction<TarArchiveEntry, Path, IOException> permissionSetter;
     private Jvm currentOsJvm;
+
+    BiFunction<TarArchiveEntry, Path, IOException> permissionSetter;
 
     Jvm(String alias, BiFunction<TarArchiveEntry, Path, IOException> permissionSetter) {
         this.alias = alias;
         this.permissionSetter = permissionSetter;
+    }
+
+    static Optional<Jvm> fraAlias(String alias) {
+        for (Jvm jvm : values()) {
+            if (jvm.alias.equals(alias)) {
+                return Optional.of(jvm);
+            }
+        }
+        return Optional.empty();
     }
 
     String getAlias() {
