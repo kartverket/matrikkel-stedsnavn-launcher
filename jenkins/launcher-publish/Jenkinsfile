@@ -35,7 +35,7 @@ pipeline {
         MAVEN_PUBLISH = credentials('MAVEN_DEPLOY_RELEASES')
 
         GIT_URL = 'ssh://git@bitbucket.statkart.no:7999/laun/launcher.git'
-        GIT_CREDENTIALS = 'ef4126ef-33a9-46e6-8659-c8d8328fb8e7' // builder2
+        GIT_CREDENTIALS = '2c90ed8a-1f70-41f3-92e9-ce54dbd353c7' // builder2
     }
 
     options {
