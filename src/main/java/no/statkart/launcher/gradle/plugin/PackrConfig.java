@@ -5,10 +5,9 @@ import org.gradle.process.JavaExecSpec;
 import java.io.File;
 import java.util.List;
 
-public class PackrConfig {
+class PackrConfig {
 
     Jvm platform;
-    String jdk;
     String executable;
     List<String> classpath;
     List<String> removePlatformLibs;
@@ -18,6 +17,7 @@ public class PackrConfig {
     File iconResource;
     boolean verbose;
 
+    //    String jdk;
     //    List<String> vmArgs;
     //    String minimizeJre;
     //    List<File> resources;
@@ -39,16 +39,14 @@ public class PackrConfig {
         } else {
             execSpec.args("--platform", "windows64");
         }
-        execSpec.args("--jdk", jdk);
+        execSpec.args("--jdk", "x");
         execSpec.args("--executable", executable);
         execSpec.args("--classpath").args(classpath);
         if (removePlatformLibs != null) {
             execSpec.args("--removelibs").args(removePlatformLibs);
         }
         execSpec.args("--mainclass", mainClass);
-        if (cacheJre != null) {
-            execSpec.args("--cachejre", cacheJre);
-        }
+        execSpec.args("--cachejre", cacheJre);
         execSpec.args("--output", outDir);
         if (iconResource != null) {
             execSpec.args("--icon", iconResource);

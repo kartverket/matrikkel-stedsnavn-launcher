@@ -160,8 +160,7 @@ class InputDialog {
     private JButton opprettAvansertPanelSwitcher(JPanel panelToSwitch) {
         Color linkColor = new Color(0x27, 0x71, 0xbb);
         JButton switcher = new JButton(switcherLabel(panelToSwitch));
-        switcher.setBorder(null);
-        switcher.setFocusPainted(false);
+        switcher.setBorderPainted(false);
         switcher.setContentAreaFilled(false);
         switcher.setForeground(linkColor);
         switcher.setHorizontalAlignment(SwingConstants.LEFT);

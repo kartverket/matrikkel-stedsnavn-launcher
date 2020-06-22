@@ -32,15 +32,11 @@ enum Jvm {
     OSX("osx", new NixPermissionSetter());
 
     private final String alias;
+    private final BiFunction<TarArchiveEntry, Path, IOException> permissionSetter;
 
     private Jvm currentOsJvm;
-
-    BiFunction<TarArchiveEntry, Path, IOException> permissionSetter;
-
-    Jvm(String alias, BiFunction<TarArchiveEntry, Path, IOException> permissionSetter) {
-        this.alias = alias;
-        this.permissionSetter = permissionSetter;
-    }
+    private URL url;
+    private Path destinationDir;
 
     static Optional<Jvm> fraAlias(String alias) {
         for (Jvm jvm : values()) {
@@ -51,13 +47,27 @@ enum Jvm {
         return Optional.empty();
     }
 
+    Jvm(String alias, BiFunction<TarArchiveEntry, Path, IOException> permissionSetter) {
+        this.alias = alias;
+        this.permissionSetter = permissionSetter;
+    }
+
     String getAlias() {
         return alias;
     }
 
-    void download(String urlString, Path destinationDir) throws IOException {
-        URL url = new URL(urlString);
-        Path destination = destinationDir.resolve(Paths.get(url.getPath()).getFileName());
+    void setURL(String urlString) throws IOException {
+        this.url = new URL(urlString);
+    }
+
+    void setDestinationDir(Path destinationDir) {
+        this.destinationDir = destinationDir;
+    }
+
+    void download() throws IOException {
+        checkState();
+        Path filename = Paths.get(url.getPath()).getFileName();
+        Path destination = destinationDir.resolve(filename);
         if (Files.isRegularFile(destination)) {
             System.out.println("Using existing jvm at " + destination);
             return;
@@ -68,12 +78,14 @@ enum Jvm {
         }
     }
 
-    void unpack(Path dir) throws IOException {
-        Path source = getArtifact(dir);
-        Path destination = dir.resolve(alias);
+    void unpack() throws IOException {
+        checkState();
+        Path destination = destinationDir.resolve(alias);
         if (Files.exists(destination)) {
             return;
         }
+        Path filename = Paths.get(url.getPath()).getFileName();
+        Path source = destinationDir.resolve(filename);
         if (isZip(source)) {
             unzip(source, destination);
         } else if (isTarGz(source)) {
@@ -83,18 +95,19 @@ enum Jvm {
         }
     }
 
-    void jlink(Path dir, List<String> modules, List<String> locales) throws IOException {
-        Path source = dir.resolve(alias);
-        Path destination = dir.resolve(alias + "-min").resolve("jre");
+    void jlink(List<String> modules, List<String> locales) throws IOException {
+        checkState();
+        Path source = destinationDir.resolve(alias);
+        Path destination = destinationDir.resolve(alias + "-min").resolve("jre");
         if (Files.exists(destination)) {
             return;
         }
-        Path jlink = findJlinkExecutable(dir, jvmOfCurrentlyRunningOS());
-        String[] cmd = { jlink.toString()
-                , "--module-path" , getJModsDirectory(source).toString()
-                , "--add-modules" , String.join(",", modules)
-                , "--include-locales" , String.join(",", locales)
-                , "--output" , destination.toString()
+        Path jlink = findJlinkExecutable(destinationDir, jvmOfCurrentlyRunningOS());
+        String[] cmd = {jlink.toString()
+                , "--module-path", getJModsDirectory(source).toString()
+                , "--add-modules", String.join(",", modules)
+                , "--include-locales", String.join(",", locales)
+                , "--output", destination.toString()
         };
 //        System.out.println("jlink cwd=" + source.toFile());
 //        System.out.println("jlink cmd=" + String.join(" ", cmd));
@@ -132,14 +145,6 @@ enum Jvm {
 
     private boolean isTarGz(Path path) {
         return path.getFileName().toString().endsWith(".tar.gz");
-    }
-
-    private Path getArtifact(Path dir) throws IOException {
-        String regex = "^.*[^a-zA-Z0-9]" + alias + "[^a-zA-Z0-9].*$";
-        try (Stream<Path> paths = Files.walk(dir, 1)) {
-            return paths.filter(path -> path.getFileName().toString().matches(regex))
-                    .findFirst().orElseThrow();
-        }
     }
 
     private Path getJModsDirectory(Path dir) throws IOException {
@@ -214,4 +219,14 @@ enum Jvm {
         }
         return result.toString(StandardCharsets.UTF_8).trim();
     }
+
+    private void checkState() {
+        if (url == null) {
+            throw new IllegalStateException("Remote URL to artifact not set");
+        }
+        if (destinationDir == null) {
+            throw new IllegalStateException("Destination directory not set");
+        }
+    }
+
 }

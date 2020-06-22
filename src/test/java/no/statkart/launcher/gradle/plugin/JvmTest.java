@@ -92,18 +92,13 @@ public class JvmTest {
     }
 
     @Test
-    public void testThatPermissionSettersAreCorrectlySet() {
-        assertThat(Jvm.LINUX.permissionSetter).isInstanceOf(NixPermissionSetter.class);
-        assertThat(Jvm.OSX.permissionSetter).isInstanceOf(NixPermissionSetter.class);
-        assertThat(Jvm.WINDOWS.permissionSetter).isInstanceOf(NoopPermissionSetter.class);
-    }
-
-    @Test
     public void testThatNixPermissionSetterSetsPermissions() throws IOException {
         NixPermissionSetter permissionSetter = spy(new NixPermissionSetter());
-        when(permissionSetter.getPermissions(anyInt())).thenReturn(new HashSet<>() {});
+        when(permissionSetter.getPermissions(anyInt())).thenReturn(new HashSet<>() {
+        });
         doNothing().when(permissionSetter).setPermissions(any(), any());
         permissionSetter.apply(new TarArchiveEntry(""), Path.of(""));
         verify(permissionSetter).setPermissions(any(), any());
     }
+
 }

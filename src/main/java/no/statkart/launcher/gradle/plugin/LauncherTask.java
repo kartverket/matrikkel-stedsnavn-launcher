@@ -161,13 +161,14 @@ public class LauncherTask extends DefaultTask {
         copyResources("jdk", "build/launcher/jdk/");
         Jvm[] jvms = {Jvm.WINDOWS, Jvm.LINUX, Jvm.OSX};
         for (Jvm jvm : jvms) {
-            jvm.download(utvidelse.getJvmUtvidelse().getUrl(jvm), toAbsolutePath("build/launcher/jdk"));
-            jvm.unpack(toAbsolutePath("build/launcher/jdk"));
+            jvm.setURL(utvidelse.getJvmUtvidelse().getUrl(jvm));
+            jvm.setDestinationDir(toAbsolutePath("build/launcher/jdk"));
+            jvm.download();
+            jvm.unpack();
         }
-        // Dette steget må utføres etter at alle jvm'ene er lastet ned
+        // Dette steget må utføres etter at alle jvm'ene er lastet ned og pakket ut
         for (Jvm jvm : jvms) {
             jvm.jlink(
-                    toAbsolutePath("build/launcher/jdk"),
                     utvidelse.getJvmUtvidelse().getModules(),
                     utvidelse.getJvmUtvidelse().getLocales()
             );
@@ -198,7 +199,6 @@ public class LauncherTask extends DefaultTask {
                 // NB: Denne må komme først på classpath!
                 bootClasspath = klient.getIcon();
             }
-            config.jdk = "x";
             exec(config, bootClasspath);
             // MAT-12826, legg til en .bat i tillegg til .exe på windows
             if (jvm == Jvm.WINDOWS) {
@@ -335,4 +335,5 @@ public class LauncherTask extends DefaultTask {
             execSpecs.classpath(getPackrJar());
         }).assertNormalExitValue();
     }
+
 }
