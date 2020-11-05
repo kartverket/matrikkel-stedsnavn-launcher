@@ -2,7 +2,6 @@ package no.statkart.launcher.client;
 
 import java.net.URL;
 import java.util.Arrays;
-import java.util.Optional;
 import java.util.Properties;
 
 class Parametre {

@@ -8,17 +8,22 @@ import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ServerExtension {
 
+    private final Project project;
     private final ConfigurableFileCollection classpath;
     private final ConfigurableFileCollection webinfLibs;
+    private final List<FileCollection> libraries = new ArrayList<>();
 
     private File webinf;
     private File metainf;
     private File getdown;
 
     public ServerExtension(Project project) {
+        this.project = project;
         classpath = project.files();
         webinfLibs = project.files();
     }
@@ -27,6 +32,12 @@ public class ServerExtension {
     @SuppressWarnings("unused")
     public void classpath(Object... classpath) {
         this.classpath.from(classpath);
+    }
+
+    // Kalles vha refleksjon av gradle
+    @SuppressWarnings("unused")
+    public void libraries(Object... libraries) {
+        this.libraries.add(project.files().from(libraries));
     }
 
     // Kalles vha refleksjon av gradle
@@ -56,6 +67,11 @@ public class ServerExtension {
     @InputFiles
     FileCollection getClasspath() {
         return classpath;
+    }
+
+    @InputFiles
+    List<FileCollection> getLibraries() {
+        return libraries;
     }
 
     @InputFiles

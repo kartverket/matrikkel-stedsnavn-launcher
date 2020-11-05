@@ -42,7 +42,7 @@ class Work {
         Path destination = rot.resolve(mappenavn);
         Path source = Paths.get(SOURCE);
         Files.createDirectories(destination);
-        try (Stream<Path> paths = Files.walk(source).filter(p -> Files.isRegularFile(p))) {
+        try (Stream<Path> paths = Files.walk(source).filter(Files::isRegularFile)) {
             paths.forEach(fil -> kopier(source, fil, destination, tjener));
         }
         return destination.toString();

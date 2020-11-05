@@ -56,10 +56,11 @@ public class Launcher {
             ikkeLoggPassordetFra(parametre);
             leggTilEkstraParametre(workMappe + "/extra.txt", parametre, args);
             registrerLauncherVersjon();
+            brukTjeneradresseFra(parametre);
             GetdownApp.main(new String[]{workMappe});
         } catch (Exception e) {
             e.printStackTrace();
-            System.err.println(String.format("Kunne ikke starte klienten: %s", e.getMessage()));
+            System.err.printf("Kunne ikke starte klienten: %s%n", e.getMessage());
             System.exit(-1);
         }
     }
@@ -185,6 +186,14 @@ public class Launcher {
         lines.addAll(Arrays.asList(args));
         Path p = Paths.get(destination);
         Files.write(p, lines);
+    }
+
+    private static void brukTjeneradresseFra(Parametre parametre) {
+        // Brukes i getdown.txt for å vite hvor man skal laste ned klienten fra
+        System.setProperty("appbase_domain", parametre.getTjener());
+        // Brukes av klienten for å vite hvor den skal bruke tjenester fra
+        System.setProperty("app.skif.server_url", parametre.getTjener());
+        System.setProperty("app.skif.single_vm", "false");
     }
 
     /**

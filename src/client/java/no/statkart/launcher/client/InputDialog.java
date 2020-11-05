@@ -256,10 +256,10 @@ class InputDialog {
 
     private void endretTjener() {
         if (inputTjener.getSelectedIndex() < 0) {
-            fallback.medTjener((String) inputTjener.getSelectedItem());
-            fallback.medBrukernavn(forrige.getBrukernavn());
-            fallback.medPassord(forrige.getPassord());
-            fallback.medHeap(forrige.getHeap());
+            fallback.medTjener((String) inputTjener.getSelectedItem())
+                    .medBrukernavn(forrige.getBrukernavn())
+                    .medPassord(forrige.getPassord())
+                    .medHeap(forrige.getHeap());
         }
         Parametre param = aktuelleInputParametre();
         if (inputBrukernavn != null) {

@@ -1,5 +1,6 @@
 package no.statkart.launcher.gradle.plugin;
 
+import com.threerings.getdown.tools.Digester;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.provider.Provider;
@@ -24,6 +25,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -51,7 +53,7 @@ public class LauncherTask extends DefaultTask {
     }
 
     @TaskAction
-    public void execute() throws IOException {
+    public void execute() throws IOException, GeneralSecurityException {
         lagKlienter();
         Map<String, String> artifacts = lagKlientinstallereForNedlasting();
         opprettTjenerWebapp(artifacts);
@@ -82,10 +84,13 @@ public class LauncherTask extends DefaultTask {
         }
     }
 
-    private void opprettTjenerWebapp(Map<String, String> artifacts) throws IOException {
+    private void opprettTjenerWebapp(Map<String, String> artifacts) throws IOException, GeneralSecurityException {
         ServerExtension server = utvidelse.getServerUtvidelse();
         opprettPathingJar(server.getClasspath(), "build/launcher/war/vault/client-dependencies.jar");
         copy(server.getClasspath(), "build/launcher/war/vault");
+        for (int i = 0; i < server.getLibraries().size(); i++) {
+            copy(server.getLibraries().get(i), "build/launcher/war/vault/libraries/" + i);
+        }
         copy(server.getWebinf(), "build/launcher/war/WEB-INF");
         copy(server.getMetainf(), "build/launcher/war/META-INF");
         String version = Objects.toString(getProject().getProperties().get("version"), null);
@@ -99,6 +104,12 @@ public class LauncherTask extends DefaultTask {
         }
         copy(server.getGetdown(), "build/launcher/war/vault");
         replace("build/launcher/war/vault/getdown.txt", "@@code@@", asCode(server.getClasspath()));
+        opprettDigests();
+    }
+
+    private void opprettDigests() throws IOException, GeneralSecurityException {
+        Path mappe = toAbsolutePath("build/launcher/war/vault");
+        Digester.createDigests(mappe.toFile(), null, null, null);
     }
 
     private String asCode(FileCollection files) {

@@ -23,9 +23,8 @@ sourceSets {
 
 dependencies {
     clientImplementation 'com.threerings.getdown:getdown-launcher:1.8.6@jar'
-    serverImplementation 'com.threerings.getdown:getdown-core:1.8.6'
-    serverImplementation 'org.slf4j:slf4j-api:1.8.0-beta4'
     serverCompileOnly 'javax.servlet:javax.servlet-api:3.1.0'
+    implementation 'com.threerings.getdown:getdown-core:1.8.6'
 
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.assertj:assertj-core:3.14.0'
