@@ -1,12 +1,8 @@
 package no.statkart.launcher.client;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -32,6 +27,16 @@ class Work {
         this.rot = rot;
     }
 
+    String getGetdownTxtPath() throws IOException {
+        Path getdownTxt = Paths.get(SOURCE).resolve("getdown.txt");
+        Properties properties = new Properties();
+        try (InputStream is = Files.newInputStream(getdownTxt)) {
+            properties.load(is);
+        }
+        String appbase = properties.getProperty("appbase");
+        return appbase.replaceAll("[a-z]+://[^/]+", "") + "/getdown.txt";
+    }
+
     /**
      * Finn arbeidsmappen som vi har skriverettigheter til.
      * Opprett den dersom den ikke finnes fra før.
@@ -43,40 +48,17 @@ class Work {
         Path source = Paths.get(SOURCE);
         Files.createDirectories(destination);
         try (Stream<Path> paths = Files.walk(source).filter(Files::isRegularFile)) {
-            paths.forEach(fil -> kopier(source, fil, destination, tjener));
+            paths.forEach(fil -> kopier(source, fil, destination));
         }
         return destination.toString();
     }
 
-    private static void kopier(Path fraMappe, Path fraFil, Path tilMappe, String tjener) {
+    private static void kopier(Path fraMappe, Path fraFil, Path tilMappe) {
         try {
             Path tilFil = tilMappe.resolve(fraMappe.relativize(fraFil));
-            // getdown.txt behandles spesielt
-            if (tilFil.endsWith("getdown.txt")) {
-                if (!Files.exists(tilFil)) {
-                    streamCopy(Files.newInputStream(fraFil), Files.newOutputStream(tilFil), patch(tjener));
-                }
-            } else {
-                Files.copy(fraFil, tilFil, REPLACE_EXISTING);
-            }
+            Files.copy(fraFil, tilFil, REPLACE_EXISTING);
         } catch (IOException e) {
             throw new IllegalStateException(e);
-        }
-    }
-
-    private static Function<String, String> patch(String tjener) {
-        return (String s) -> s.replaceAll("[a-z]+://[^/]+", tjener);
-    }
-
-    private static void streamCopy(InputStream input, OutputStream output, Function<String, String> function) throws IOException {
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(input));
-             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(output))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                line = function.apply(line);
-                bw.write(line);
-                bw.newLine();
-            }
         }
     }
 

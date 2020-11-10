@@ -55,7 +55,7 @@ public class Launcher {
             loggTilFil(workMappe + "/launcher.log");
             ikkeLoggPassordetFra(parametre);
             leggTilEkstraParametre(workMappe + "/extra.txt", parametre, args);
-            registrerLauncherVersjon();
+            kontrollerLauncherVersjon(parametre);
             brukTjeneradresseFra(parametre);
             GetdownApp.main(new String[]{workMappe});
         } catch (Exception e) {
@@ -66,13 +66,10 @@ public class Launcher {
     }
 
     private static Parametre finnParametre(Work work) throws Exception {
+        List<Parametre> forslagTilParametre = work.lesInputParametre();
         Parametre standard = new Parametre()
                 .medTjener(Konfigurasjon.get(Konfigurasjonsverdi.DEFAULT_SERVER))
                 .medHeap(Konfigurasjon.get(Konfigurasjonsverdi.DEFAULT_HEAP));
-        if (!Input.vis()) {
-            return standard;
-        }
-        List<Parametre> forslagTilParametre = work.lesInputParametre();
         fyllInnManglendeStandardVerdier(forslagTilParametre, standard);
         if (Input.visTjener()) {
             if (forslagTilParametre.isEmpty()) {
@@ -85,7 +82,13 @@ public class Launcher {
                             .findFirst().orElse(standard)
             );
         }
-        return Input.innhentParametre(forslagTilParametre);
+        TjenerKontroll kontroll = new TjenerKontroll(work.getGetdownTxtPath());
+        return Input.innhentParametre(forslagTilParametre, kontroll);
+    }
+
+    private static void kontrollerLauncherVersjon(Parametre parametre) {
+        String tjener = parametre.getTjener();
+        // TODO
     }
 
     private static void fyllInnManglendeStandardVerdier(List<Parametre> paramList, Parametre standard) {

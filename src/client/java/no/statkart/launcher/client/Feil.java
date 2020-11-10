@@ -11,10 +11,16 @@ class Feil {
 
     private final Exception exception;
     private final Parametre inputParametre;
+    private final boolean redFlag;
 
     Feil(Exception exception, Parametre inputParametre) {
-        this.exception = exception;
+        this(exception, inputParametre, true);
+    }
+
+    Feil(Exception exception, Parametre inputParametre, boolean redFlag) {
         this.inputParametre = inputParametre;
+        this.exception = exception;
+        this.redFlag = redFlag;
     }
 
     boolean erTjenerfeil() {
@@ -37,6 +43,10 @@ class Feil {
 
     Parametre getInputParametre() {
         return inputParametre;
+    }
+
+    boolean erRedFlag() {
+        return redFlag;
     }
 
     String tilFeilmelding() {
@@ -62,7 +72,7 @@ class Feil {
         if (exception instanceof NumberFormatException) {
             return "Minnestørrelse må skrives inn som et heltall";
         }
-        return "Ugyldig brukernavn og/eller passord";
+        return "Gyldig brukernavn og passord er påkrevd";
     }
 
     private boolean harTjenersuffiks() {

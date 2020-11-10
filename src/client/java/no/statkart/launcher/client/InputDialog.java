@@ -131,7 +131,7 @@ class InputDialog {
     private void leggTilFeil(JPanel panel, int y) {
         if (feil != null) {
             JLabel labelFeilmelding = new JLabel(feil.tilFeilmelding());
-            labelFeilmelding.setForeground(Color.RED);
+            labelFeilmelding.setForeground(responsfarge());
             panel.add(labelFeilmelding, medPosisjon(0, y, 1, GridBagConstraints.REMAINDER,
                     new Insets(10, 2, 2, 2)));
         }
@@ -140,6 +140,10 @@ class InputDialog {
 
     private boolean trengerAvansert() {
         return visHeap;
+    }
+
+    private Color responsfarge() {
+        return feil.erRedFlag() ? Color.RED : Color.BLACK;
     }
 
     private int leggTilAvansert(JPanel panel, int y) {
@@ -247,7 +251,7 @@ class InputDialog {
         }
         if (tidligereParametre.size() < inputTjener.getItemCount()) {
             if (idx == 0) {
-                return feil.getInputParametre();
+                return feil == null ? fallback : feil.getInputParametre();
             }
             return tidligereParametre.get(idx - 1);
         }
