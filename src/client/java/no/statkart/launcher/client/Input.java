@@ -1,19 +1,19 @@
 package no.statkart.launcher.client;
 
-import java.net.Authenticator;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Denne klassen har en viktig sideeffekt:
- * Standard autentisering settes statisk vha {@link Authenticator}.
- * Det vil si at enhver påfølgende URLConnection vil prøve å koble til med dette brukernavn/passord-paret.
- * <p/>
- * Dermed kan klientartifaktene som ligger bak BASIC AUTH lastes ned av getdown.
- */
 class Input {
 
-    static Parametre innhentParametre(List<Parametre> tidligereInputParametre, TjenerKontroll kontroll) {
+    private final StandardOppsett standard;
+
+    Input(StandardOppsett standard) {
+        this.standard = standard;
+    }
+
+    Parametre innhentParametre(List<Parametre> tidligereInputParametre) {
+        TjenerKontroll kontroll = new TjenerKontroll(standard);
         Optional<Feil> feil = Optional.empty();
         if (!visHeap() && !visTjener()) {
             feil = kontroll.utenBrukerPassord(tidligereInputParametre.get(0));
@@ -21,16 +21,15 @@ class Input {
                 return tidligereInputParametre.get(0);
             }
         }
-        String tittel = Konfigurasjon.get(Konfigurasjonsverdi.TITLE);
-        String versjon = Konfigurasjon.get(Konfigurasjonsverdi.VERSION);
-        String melding = Konfigurasjon.get(Konfigurasjonsverdi.INPUT_MESSAGE);
+        String melding = standard.getKonfigurasjon().get(Konfigurasjonsverdi.INPUT_MESSAGE);
+        Path iconPath = standard.getRot().resolve("login.png");
         Parametre input;
         do {
             boolean brukerPassord = visBrukerPassord() || feil.isPresent() && feil.get().erBrukerPassordFeil();
             input = new InputDialog()
-                    .medTittel(tittel)
-                    .medVersjon(versjon)
+                    .medTittel(inputTittel())
                     .medMelding(melding)
+                    .medIconPath(iconPath)
                     .visHeap(visHeap())
                     .visTjener(visTjener())
                     .visBrukerPassord(brukerPassord)
@@ -50,18 +49,26 @@ class Input {
         return input;
     }
 
-    static boolean visTjener() {
-        return Konfigurasjon.is(Konfigurasjonsverdi.INPUT_SERVER)
-                || Konfigurasjon.get(Konfigurasjonsverdi.DEFAULT_SERVER) == null;
+    String inputTittel() {
+        String tittel = standard.getKonfigurasjon().get(Konfigurasjonsverdi.TITLE);
+        String versjon = standard.getKonfigurasjon().get(Konfigurasjonsverdi.VERSION);
+        return versjon == null
+                ? tittel + " (uversjonert)"
+                : tittel + " " + versjon;
     }
 
-    static boolean visBrukerPassord() {
-        return Konfigurasjon.is(Konfigurasjonsverdi.INPUT_CREDENTIALS);
+    boolean visTjener() {
+        return standard.getKonfigurasjon().is(Konfigurasjonsverdi.INPUT_SERVER)
+                || standard.getKonfigurasjon().get(Konfigurasjonsverdi.DEFAULT_SERVER) == null;
     }
 
-    static boolean visHeap() {
-        return Konfigurasjon.is(Konfigurasjonsverdi.INPUT_HEAP)
-                || Konfigurasjon.get(Konfigurasjonsverdi.DEFAULT_HEAP) == null;
+    boolean visBrukerPassord() {
+        return standard.getKonfigurasjon().is(Konfigurasjonsverdi.INPUT_CREDENTIALS);
+    }
+
+    boolean visHeap() {
+        return standard.getKonfigurasjon().is(Konfigurasjonsverdi.INPUT_HEAP)
+                || standard.getKonfigurasjon().get(Konfigurasjonsverdi.DEFAULT_HEAP) == null;
     }
 
 }

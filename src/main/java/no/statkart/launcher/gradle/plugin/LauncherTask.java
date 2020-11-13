@@ -102,6 +102,11 @@ public class LauncherTask extends DefaultTask {
         for (Map.Entry<String, String> e : artifacts.entrySet()) {
             replace("build/launcher/war/WEB-INF/web.xml", "@@" + e.getKey() + "@@", e.getValue());
         }
+        String oldestAllowedClientVersion = server.getOldestAllowedClientVersion();
+        if (oldestAllowedClientVersion == null) {
+            throw new IllegalStateException("Mangler obligatorisk attributt launcher/server/oldestAllowedClientVersion");
+        }
+        replace("build/launcher/war/WEB-INF/web.xml", "@@oldestAllowedClientVersion@@", oldestAllowedClientVersion);
         copy(server.getGetdown(), "build/launcher/war/vault");
         replace("build/launcher/war/vault/getdown.txt", "@@code@@", asCode(server.getClasspath()));
         opprettDigests();
@@ -329,7 +334,7 @@ public class LauncherTask extends DefaultTask {
     @OutputFile
     public Provider<File> getPackrJar() {
         return getProject().provider(() -> {
-            URL url = LauncherTask.class.getResource("/lib/packr/packr-2.0-SNAPSHOT.jar");
+            URL url = LauncherTask.class.getResource("/lib/packr/packr-all-3.0.0.jar");
             File file = getProject().file("build/packr/packr.jar");
             GFileUtils.copyURLToFile(url, file);
             return file;

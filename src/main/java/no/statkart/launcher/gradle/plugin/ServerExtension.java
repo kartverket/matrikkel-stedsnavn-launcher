@@ -3,6 +3,7 @@ package no.statkart.launcher.gradle.plugin;
 import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
@@ -21,6 +22,7 @@ public class ServerExtension {
     private File webinf;
     private File metainf;
     private File getdown;
+    private String oldestAllowedClientVersion;
 
     public ServerExtension(Project project) {
         this.project = project;
@@ -64,6 +66,12 @@ public class ServerExtension {
         this.getdown = getdown;
     }
 
+    // Kalles vha refleksjon av gradle
+    @SuppressWarnings("unused")
+    public void oldestAllowedClientVersion(String oldestAllowedClientVersion) {
+        this.oldestAllowedClientVersion = oldestAllowedClientVersion;
+    }
+
     @InputFiles
     FileCollection getClasspath() {
         return classpath;
@@ -92,6 +100,11 @@ public class ServerExtension {
     @InputFile
     File getGetdown() {
         return getdown;
+    }
+
+    @Input
+    String getOldestAllowedClientVersion() {
+        return oldestAllowedClientVersion;
     }
 
 }

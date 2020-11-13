@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -17,24 +16,14 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 class Work {
 
-    static final String SOURCE = "work";
-
     private static final String CACHE = "cache.properties";
 
+    private final StandardOppsett standard;
     private final Path rot;
 
-    Work(Path rot) {
+    Work(StandardOppsett standard, Path rot) {
+        this.standard = standard;
         this.rot = rot;
-    }
-
-    String getGetdownTxtPath() throws IOException {
-        Path getdownTxt = Paths.get(SOURCE).resolve("getdown.txt");
-        Properties properties = new Properties();
-        try (InputStream is = Files.newInputStream(getdownTxt)) {
-            properties.load(is);
-        }
-        String appbase = properties.getProperty("appbase");
-        return appbase.replaceAll("[a-z]+://[^/]+", "") + "/getdown.txt";
     }
 
     /**
@@ -45,10 +34,9 @@ class Work {
         String tjener = loginParametre.getTjener();
         String mappenavn = tjenerTilMappenavn(tjener);
         Path destination = rot.resolve(mappenavn);
-        Path source = Paths.get(SOURCE);
         Files.createDirectories(destination);
-        try (Stream<Path> paths = Files.walk(source).filter(Files::isRegularFile)) {
-            paths.forEach(fil -> kopier(source, fil, destination));
+        try (Stream<Path> paths = Files.walk(standard.getRot()).filter(Files::isRegularFile)) {
+            paths.forEach(fil -> kopier(standard.getRot(), fil, destination));
         }
         return destination.toString();
     }
@@ -103,7 +91,7 @@ class Work {
                 // Legacy-støtte for touch.txt
                 properties.setProperty("tjener", mappenavnTilTjener(p.getParent().getFileName().toString()));
                 properties.setProperty("oppdatert", new String(Files.readAllBytes(p)));
-                properties.setProperty("heap", Konfigurasjon.get(Konfigurasjonsverdi.DEFAULT_HEAP));
+                properties.setProperty("heap", standard.getKonfigurasjon().get(Konfigurasjonsverdi.DEFAULT_HEAP));
                 return properties;
             }
         } catch (IOException e) {

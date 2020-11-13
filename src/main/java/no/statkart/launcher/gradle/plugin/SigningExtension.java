@@ -1,7 +1,7 @@
 package no.statkart.launcher.gradle.plugin;
 
+import net.jsign.AuthenticodeSigner;
 import net.jsign.KeyStoreUtils;
-import net.jsign.PESigner;
 import net.jsign.pe.PEFile;
 
 import java.io.File;
@@ -34,7 +34,7 @@ public class SigningExtension {
 
     void execute(Path into) throws Exception {
         KeyStore keystore = KeyStoreUtils.load(new File(store), "PKCS12", password, null);
-        PESigner signer = new PESigner(keystore, alias, password);
+        AuthenticodeSigner signer = new AuthenticodeSigner(keystore, alias, password);
         signer.withTimestamping(false);
         signer.sign(new PEFile(into.toFile()));
     }

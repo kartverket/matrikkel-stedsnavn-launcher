@@ -19,6 +19,12 @@ repositories {
 sourceSets {
     client
     server
+    test {
+        compileClasspath += sourceSets.client.output
+        compileClasspath += sourceSets.server.output
+        runtimeClasspath += sourceSets.client.output
+        runtimeClasspath += sourceSets.server.output
+    }
 }
 
 dependencies {
@@ -26,20 +32,21 @@ dependencies {
     serverCompileOnly 'javax.servlet:javax.servlet-api:3.1.0'
     implementation 'com.threerings.getdown:getdown-core:1.8.6'
 
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'org.assertj:assertj-core:3.14.0'
-    testImplementation 'org.mockito:mockito-core:2.19.1'
+    testImplementation 'junit:junit:4.13.1'
+    testImplementation 'org.assertj:assertj-core:3.18.1'
+    testImplementation 'org.mockito:mockito-core:3.5.7'
 
-    api 'org.apache.commons:commons-compress:1.19'
-    api 'net.jsign:jsign-core:2.1'
+    api 'org.apache.commons:commons-compress:1.20'
+    api 'net.jsign:jsign-core:3.1'
     api 'org.tukaani:xz:1.8'
 }
 
 gradlePlugin {
-    //noinspection GroovyAssignabilityCheck
     plugins {
         launcherPlugin {
+            //noinspection GroovyAssignabilityCheck
             id = 'no.statkart.launcher'
+            //noinspection GroovyAssignabilityCheck
             implementationClass = 'no.statkart.launcher.gradle.plugin.LauncherPlugin'
         }
     }
@@ -65,6 +72,7 @@ compileServerJava {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    options.compilerArgs << '-Xlint:all' << '-Werror'
 }
 
 task clientJar(type: Jar) {
@@ -94,7 +102,7 @@ task serverJar(type: Jar) {
 jar {
     // Pluginen trenger denne, men den ligger pt ikke i maven
     into('lib/packr') {
-        from 'lib/packr-2.0-SNAPSHOT.jar'
+        from 'lib/packr-all-3.0.0.jar'
     }
     into('jdk') {
         from('jdk') {
@@ -111,7 +119,7 @@ jar {
     }
     manifest {
         attributes(
-                'Implementation-Title': 'Kartverkets launcher',
+                'Implementation-Title': 'Kartverkets launcher plugin',
                 'Implementation-Version': archiveVersion.get(),
         )
     }

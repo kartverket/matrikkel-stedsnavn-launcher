@@ -2,6 +2,7 @@ package no.statkart.launcher.client;
 
 import com.threerings.getdown.launcher.GetdownApp;
 
+import javax.swing.*;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -14,7 +15,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
@@ -27,16 +27,18 @@ import java.util.logging.Logger;
  * Dette er fordi filene her må kunne skrives til (konfigurasjon, artifakter, logg, osv).
  * </li>
  * <li>
- * Har en egen loginboks - fordi klientartifaktene ligger bak basic auth.
+ * Har en egen potensiell dialogboks - man kan trenge å spørre etter tjener, bruker/passord
+ * dersom BasicAuthentication beskytter vault på tjeneren, heapstørrelse på klient-vm'en.
  * </li>
  * <li>
- * Viderefører bruker/passord til klientens login.
+ * Er tilrettelagt for skif-applikasjoner, men ikke et krav:
+ * Setter skif.server_url og skif.single_vm, og potensielt skif.server_username og skif.server_password.
  * </li>
  * </ul>
  */
 public class Launcher {
 
-    private static final OS SYSTEM = currentSystem();
+    private final StandardOppsett standard;
 
     /**
      * Denne metoden kan ikke kaste exception.
@@ -44,20 +46,8 @@ public class Launcher {
      */
     public static void main(String... args) {
         try {
-            Work work = new Work(SYSTEM.finnRot());
-            Parametre parametre = finnParametre(work);
-            if (parametre == null) {
-                System.exit(0);
-            }
-            parametre.kontroller();
-            String workMappe = work.finnEllerOpprettWorkMappe(parametre);
-            work.skrivLoginParametre(parametre);
-            loggTilFil(workMappe + "/launcher.log");
-            ikkeLoggPassordetFra(parametre);
-            leggTilEkstraParametre(workMappe + "/extra.txt", parametre, args);
-            kontrollerLauncherVersjon(parametre);
-            brukTjeneradresseFra(parametre);
-            GetdownApp.main(new String[]{workMappe});
+            StandardOppsett standard = new StandardOppsett(Path.of("work"));
+            new Launcher(standard).start(args);
         } catch (Exception e) {
             e.printStackTrace();
             System.err.printf("Kunne ikke starte klienten: %s%n", e.getMessage());
@@ -65,95 +55,69 @@ public class Launcher {
         }
     }
 
-    private static Parametre finnParametre(Work work) throws Exception {
-        List<Parametre> forslagTilParametre = work.lesInputParametre();
-        Parametre standard = new Parametre()
-                .medTjener(Konfigurasjon.get(Konfigurasjonsverdi.DEFAULT_SERVER))
-                .medHeap(Konfigurasjon.get(Konfigurasjonsverdi.DEFAULT_HEAP));
-        fyllInnManglendeStandardVerdier(forslagTilParametre, standard);
-        if (Input.visTjener()) {
+    Launcher(StandardOppsett standard) {
+        this.standard = standard;
+    }
+
+    void start(String... args) throws Exception {
+        Input input = new Input(standard);
+        Parametre parametre = finnParametre(input);
+        if (parametre == null) {
+            System.exit(0);
+        }
+        parametre.kontroller();
+        Work work = standard.getWork();
+        String workMappe = work.finnEllerOpprettWorkMappe(parametre);
+        work.skrivLoginParametre(parametre);
+        loggTilFil(workMappe + "/launcher.log");
+        ikkeLoggPassordetFra(parametre);
+        leggTilEkstraParametre(workMappe + "/extra.txt", parametre, args);
+        if (!klientAkseptert(parametre)) {
+            JOptionPane.showMessageDialog(
+                    new JFrame(),
+                    "Vennligst last ned matrikkelstarteren på nytt. Du må oppdatere til nyeste versjon.",
+                    input.inputTittel(),
+                    JOptionPane.ERROR_MESSAGE
+            );
+            System.exit(-1);
+        }
+        brukTjeneradresseFra(parametre);
+        registrerKlientversjon();
+        GetdownApp.main(new String[]{workMappe});
+    }
+
+    private Parametre finnParametre(Input input) throws Exception {
+        List<Parametre> forslagTilParametre = standard.getWork().lesInputParametre();
+        fyllInnManglendeStandardVerdier(forslagTilParametre);
+        Parametre param = standard.getParametre();
+        if (input.visTjener()) {
             if (forslagTilParametre.isEmpty()) {
-                forslagTilParametre.add(standard);
+                forslagTilParametre.add(param);
             }
         } else {
             forslagTilParametre = Collections.singletonList(
                     forslagTilParametre.stream()
-                            .filter(p -> Objects.equals(standard.getTjener(), p.getTjener()))
-                            .findFirst().orElse(standard)
+                            .filter(p -> Objects.equals(param.getTjener(), p.getTjener()))
+                            .findFirst().orElse(param)
             );
         }
-        TjenerKontroll kontroll = new TjenerKontroll(work.getGetdownTxtPath());
-        return Input.innhentParametre(forslagTilParametre, kontroll);
+        return input.innhentParametre(forslagTilParametre);
     }
 
-    private static void kontrollerLauncherVersjon(Parametre parametre) {
-        String tjener = parametre.getTjener();
-        // TODO
+    private boolean klientAkseptert(Parametre param) {
+        TjenerKontroll kontroll = new TjenerKontroll(standard);
+        return kontroll.klientAkseptert(param);
     }
 
-    private static void fyllInnManglendeStandardVerdier(List<Parametre> paramList, Parametre standard) {
+    private void fyllInnManglendeStandardVerdier(List<Parametre> paramList) {
         paramList.forEach(p -> {
             if (p.getHeap() == null) {
-                p.medHeap(standard.getHeap());
+                p.medHeap(standard.getParametre().getHeap());
             }
         });
     }
 
-    private static OS currentSystem() {
-        String name = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
-        if (name.contains("nux")) {
-            return new Linux();
-        }
-        if (name.contains("mac")) {
-            return new Mac();
-        }
-        return new Windows();
-    }
-
-    interface OS {
-        Path finnRot() throws IOException;
-    }
-
-    static class Windows implements OS {
-        @Override
-        public Path finnRot() {
-            String appdata = System.getenv("APPDATA");
-            if (appdata == null) {
-                throw new IllegalStateException("Fant ikke variablen APPDATA");
-            }
-            String rot = Konfigurasjon.get(Konfigurasjonsverdi.WORK_WINDOWS)
-                    .replace("%HOME%", appdata);
-            return Paths.get(rot);
-        }
-    }
-
-    static class Linux implements OS {
-        @Override
-        public Path finnRot() {
-            String home = System.getProperty("user.home");
-            if (home == null) {
-                throw new IllegalStateException("Fant ikke variablen user.home");
-            }
-            String rot = Konfigurasjon.get(Konfigurasjonsverdi.WORK_LINUX)
-                    .replace("%HOME%", home);
-            return Paths.get(rot);
-        }
-    }
-
-    static class Mac implements OS {
-        @Override
-        public Path finnRot() {
-            String home = System.getProperty("user.home");
-            if (home == null) {
-                throw new IllegalStateException("Fant ikke variablen user.home");
-            }
-            String rot = Konfigurasjon.get(Konfigurasjonsverdi.WORK_OSX)
-                    .replace("%HOME%", home);
-            return Paths.get(rot);
-        }
-    }
-
-    private static void loggTilFil(String destination) throws IOException {
+    private void loggTilFil(String destination) throws IOException {
         File logFile = new File(destination);
         PrintStream logOut = new PrintStream(
                 new BufferedOutputStream(new FileOutputStream(logFile)), true);
@@ -166,7 +130,7 @@ public class Launcher {
     /**
      * Pass på at passordet aldri blir skrevet til disk (logg).
      */
-    private static void ikkeLoggPassordetFra(Parametre loginParametre) {
+    private void ikkeLoggPassordetFra(Parametre loginParametre) {
         if (loginParametre.getPassord() == null) {
             return;
         }
@@ -179,11 +143,11 @@ public class Launcher {
         }
     }
 
-    private static String fjernPassord(String input, char[] passord) {
+    private String fjernPassord(String input, char[] passord) {
         return input.replaceAll("\\b\\Q" + String.copyValueOf(passord) + "\\E\\b", "***");
     }
 
-    private static void leggTilEkstraParametre(String destination, Parametre loginParametre, String[] args) throws IOException {
+    private void leggTilEkstraParametre(String destination, Parametre loginParametre, String[] args) throws IOException {
         List<String> lines = new ArrayList<>();
         lines.add("-Xmx" + loginParametre.getHeap() + "m");
         lines.addAll(Arrays.asList(args));
@@ -191,7 +155,7 @@ public class Launcher {
         Files.write(p, lines);
     }
 
-    private static void brukTjeneradresseFra(Parametre parametre) {
+    private void brukTjeneradresseFra(Parametre parametre) {
         // Brukes i getdown.txt for å vite hvor man skal laste ned klienten fra
         System.setProperty("appbase_domain", parametre.getTjener());
         // Brukes av klienten for å vite hvor den skal bruke tjenester fra
@@ -199,11 +163,8 @@ public class Launcher {
         System.setProperty("app.skif.single_vm", "false");
     }
 
-    /**
-     * Versjonen brukes til å sjekke om brukeren må oppdatere launcheren sin.
-     */
-    private static void registrerLauncherVersjon() {
-        String versjon = Konfigurasjon.get(Konfigurasjonsverdi.VERSION);
+    private void registrerKlientversjon() {
+        String versjon = standard.getKonfigurasjon().get(Konfigurasjonsverdi.VERSION);
         if (versjon != null) {
             System.setProperty("app.launcher.version", versjon);
         }

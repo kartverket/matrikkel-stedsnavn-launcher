@@ -1,28 +1,33 @@
 package no.statkart.launcher.client;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 class Konfigurasjon {
 
-    private static Properties properties;
+    private final Path rot;
+    private final Properties properties;
 
-    static synchronized String get(Konfigurasjonsverdi key) {
-        if (properties == null) {
-            properties = getProperties();
-        }
+    public Konfigurasjon(Path rot) {
+        this.rot = rot;
+        this.properties = getProperties();
+    }
+
+    synchronized String get(Konfigurasjonsverdi key) {
         return properties.getProperty(key.getKey());
     }
 
-    static synchronized boolean is(Konfigurasjonsverdi key) {
+    synchronized boolean is(Konfigurasjonsverdi key) {
         return "true".equalsIgnoreCase(get(key));
     }
 
-    private static Properties getProperties() {
-        Path propPath = Paths.get(Work.SOURCE).resolve("client.properties");
+    private Properties getProperties() {
+        Path propPath = rot.resolve("client.properties");
         if (!Files.exists(propPath)) {
             throw new IllegalStateException("Finner ikke 'client.properties' i work-katalogen");
         }

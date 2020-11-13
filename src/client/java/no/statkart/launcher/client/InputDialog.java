@@ -10,16 +10,15 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
 class InputDialog {
 
     private Feil feil;
-    private String versjon;
     private String tittel;
     private String melding;
+    private Path iconPath;
     private boolean visTjener = true;
     private boolean visBrukerPassord = true;
     private boolean visHeap = true;
@@ -37,13 +36,13 @@ class InputDialog {
         return this;
     }
 
-    InputDialog medVersjon(String versjon) {
-        this.versjon = versjon;
+    InputDialog medMelding(String melding) {
+        this.melding = melding;
         return this;
     }
 
-    InputDialog medMelding(String melding) {
-        this.melding = melding;
+    InputDialog medIconPath(Path iconPath) {
+        this.iconPath = iconPath;
         return this;
     }
 
@@ -287,10 +286,6 @@ class InputDialog {
     }
 
     private boolean dialogOK(Object message) throws HeadlessException {
-        String tittelOgVersjon = versjon == null
-                ? tittel + " (uversjonert)"
-                : tittel + " " + versjon;
-        Path iconPath = Paths.get(Work.SOURCE).resolve("login.png");
         if (!Files.exists(iconPath)) {
             throw new IllegalStateException("Finner ikke 'login.png' i work-katalogen");
         }
@@ -305,7 +300,7 @@ class InputDialog {
         );
         pane.setComponentOrientation(JOptionPane.getRootFrame().getComponentOrientation());
         pane.selectInitialValue();
-        JDialog dialog = pane.createDialog(null, tittelOgVersjon);
+        JDialog dialog = pane.createDialog(null, tittel);
         dialog.addWindowListener(new WindowAdapter() {
             @Override
             public void windowActivated(WindowEvent e) {

@@ -113,8 +113,4 @@ class Parametre {
         }
     }
 
-    public boolean harBrukernavnPassord() {
-        return brukernavn != null && !brukernavn.isEmpty();
-    }
-
 }
