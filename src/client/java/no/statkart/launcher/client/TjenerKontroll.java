@@ -1,5 +1,6 @@
 package no.statkart.launcher.client;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.Authenticator;
 import java.net.HttpURLConnection;
@@ -65,6 +66,9 @@ public class TjenerKontroll {
         try {
             URL url = tilKlientValideringUrl(param.getTjener(), finnKlientVersjon());
             check(url);
+            return true;
+        } catch (FileNotFoundException e) {
+            // Tjeneren har ikke satt opp validerings-tjenesten, da aksepteres alt
             return true;
         } catch (IOException e) {
             return false;
