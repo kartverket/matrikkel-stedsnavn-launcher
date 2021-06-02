@@ -334,7 +334,7 @@ public class LauncherTask extends DefaultTask {
     @OutputFile
     public Provider<File> getPackrJar() {
         return getProject().provider(() -> {
-            URL url = LauncherTask.class.getResource("/lib/packr/packr-all-3.0.0.jar");
+            URL url = LauncherTask.class.getResource("/lib/packr/packr-all-4.0.0.jar");
             File file = getProject().file("build/packr/packr.jar");
             GFileUtils.copyURLToFile(url, file);
             return file;
