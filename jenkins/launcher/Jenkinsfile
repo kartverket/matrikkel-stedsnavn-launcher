@@ -54,7 +54,7 @@ pipeline {
 
         stage('Test launcher') {
             steps {
-                sh "${GRADLEW_CMD} test"
+                sh "${GRADLEW_CMD} check"
             }
             post {
                 always {

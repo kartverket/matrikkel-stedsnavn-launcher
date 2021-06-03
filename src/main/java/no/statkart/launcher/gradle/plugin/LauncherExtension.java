@@ -63,6 +63,7 @@ public class LauncherExtension {
         return serverExt;
     }
 
+    @Nested
     ClientExtension[] getKlienter() {
         return clients.toArray(new ClientExtension[0]);
     }
