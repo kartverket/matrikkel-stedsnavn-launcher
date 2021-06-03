@@ -97,7 +97,7 @@ public class ServerExtension {
         return metainf;
     }
 
-    @InputFile
+    @InputDirectory
     File getGetdown() {
         return getdown;
     }

@@ -4,6 +4,7 @@ import com.threerings.getdown.tools.Digester;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.provider.Provider;
+import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.util.GFileUtils;
@@ -43,13 +44,13 @@ import java.util.zip.ZipEntry;
 
 public class LauncherTask extends DefaultTask {
 
-    private final LauncherExtension utvidelse;
-
-    public LauncherTask() {
-        utvidelse = getProject().getExtensions().findByType(LauncherExtension.class);
+    private LauncherExtension utvidelse;
+    @Nested
+    public LauncherExtension getUtvidelse() {
         if (utvidelse == null) {
-            throw new IllegalStateException("Launcher not configured");
+            utvidelse = getProject().getExtensions().findByType(LauncherExtension.class);
         }
+        return Objects.requireNonNull(utvidelse, "Launcher not configured");
     }
 
     @TaskAction
