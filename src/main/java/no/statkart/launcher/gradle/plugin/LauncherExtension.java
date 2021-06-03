@@ -10,7 +10,7 @@ import org.gradle.util.ConfigureUtil;
 
 public class LauncherExtension {
 
-    private final Project project;
+    final Project project;
     private final NamedDomainObjectContainer<ClientExtension> clients;
 
     private String version;
@@ -38,7 +38,7 @@ public class LauncherExtension {
     // Kalles vha refleksjon av gradle
     @SuppressWarnings("unused")
     public void server(Closure<?> c) {
-        serverExt = new ServerExtension(project);
+        serverExt = new ServerExtension(this);
         ConfigureUtil.configure(c, serverExt);
     }
 

@@ -30,6 +30,7 @@ import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -43,6 +44,7 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 
 public class LauncherTask extends DefaultTask {
+    static final String GETDOWN_TXT = "getdown.txt";
 
     private LauncherExtension utvidelse;
     @Nested
@@ -55,7 +57,7 @@ public class LauncherTask extends DefaultTask {
 
     @TaskAction
     public void execute() throws IOException, GeneralSecurityException {
-        lagKlienter();
+        lagKlienter(getUtvidelse().getJvmUtvidelse());
         Map<String, String> artifacts = lagKlientinstallereForNedlasting();
         opprettTjenerWebapp(artifacts);
         opprettWar();
@@ -89,8 +91,10 @@ public class LauncherTask extends DefaultTask {
         ServerExtension server = utvidelse.getServerUtvidelse();
         opprettPathingJar(server.getClasspath(), "build/launcher/war/vault/client-dependencies.jar");
         copy(server.getClasspath(), "build/launcher/war/vault");
-        for (int i = 0; i < server.getLibraries().size(); i++) {
-            copy(server.getLibraries().get(i), "build/launcher/war/vault/libraries/" + i);
+        Iterator<File> serverLibraries = server.getLibraries().iterator();
+        int i = 0;
+        while (serverLibraries.hasNext()) {
+            copy(serverLibraries.next(), "build/launcher/war/vault/libraries/" + i++);
         }
         copy(server.getWebinf(), "build/launcher/war/WEB-INF");
         copy(server.getMetainf(), "build/launcher/war/META-INF");
@@ -103,13 +107,10 @@ public class LauncherTask extends DefaultTask {
         for (Map.Entry<String, String> e : artifacts.entrySet()) {
             replace("build/launcher/war/WEB-INF/web.xml", "@@" + e.getKey() + "@@", e.getValue());
         }
-        String oldestAllowedClientVersion = server.getOldestAllowedClientVersion();
-        if (oldestAllowedClientVersion == null) {
-            throw new IllegalStateException("Mangler obligatorisk attributt launcher/server/oldestAllowedClientVersion");
-        }
+        String oldestAllowedClientVersion = server.getOldestAllowedClientVersion().get();
         replace("build/launcher/war/WEB-INF/web.xml", "@@oldestAllowedClientVersion@@", oldestAllowedClientVersion);
         copy(server.getGetdown(), "build/launcher/war/vault");
-        replace("build/launcher/war/vault/getdown.txt", "@@code@@", asCode(server.getClasspath()));
+        replace("build/launcher/war/vault/" + GETDOWN_TXT, "@@code@@", asCode(server.getClasspath()));
         opprettDigests();
     }
 
@@ -173,10 +174,10 @@ public class LauncherTask extends DefaultTask {
         return artifacts;
     }
 
-    private void lagKlienter() throws IOException {
+    private void lagKlienter(JvmExtension jvmExtension) throws IOException {
         copyResources("lib/client", "build/launcher/lib/");
         copyResources("jdk", "build/launcher/jdk/");
-        Jvm[] jvms = {Jvm.WINDOWS, Jvm.LINUX, Jvm.OSX};
+        List<Jvm> jvms = jvmExtension.getConfiguredJvms();
         for (Jvm jvm : jvms) {
             jvm.setURL(utvidelse.getJvmUtvidelse().getUrl(jvm));
             jvm.setDestinationDir(toAbsolutePath("build/launcher/jdk"));

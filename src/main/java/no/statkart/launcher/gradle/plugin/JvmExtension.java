@@ -3,6 +3,8 @@ package no.statkart.launcher.gradle.plugin;
 import org.gradle.api.tasks.Input;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class JvmExtension {
 
@@ -50,6 +52,13 @@ public class JvmExtension {
             return urlOsx;
         }
         return urlWindows;
+    }
+
+    @Input
+    List<Jvm> getConfiguredJvms() {
+        return Stream.of(Jvm.values())
+                .filter(jvm -> getUrl(jvm) != null)
+                .collect(Collectors.toList());
     }
 
     @Input

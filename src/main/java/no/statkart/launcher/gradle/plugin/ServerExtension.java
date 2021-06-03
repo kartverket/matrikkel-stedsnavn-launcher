@@ -3,31 +3,31 @@ package no.statkart.launcher.gradle.plugin;
 import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputDirectory;
-import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 public class ServerExtension {
 
-    private final Project project;
     private final ConfigurableFileCollection classpath;
     private final ConfigurableFileCollection webinfLibs;
-    private final List<FileCollection> libraries = new ArrayList<>();
+    private final ConfigurableFileCollection libraries;
 
     private File webinf;
     private File metainf;
     private File getdown;
-    private String oldestAllowedClientVersion;
+    private final Property<String> oldestAllowedClientVersion;
 
-    public ServerExtension(Project project) {
-        this.project = project;
+    public ServerExtension(LauncherExtension launcherExtension) {
+        Project project = launcherExtension.project;
         classpath = project.files();
         webinfLibs = project.files();
+        libraries = project.files();
+        oldestAllowedClientVersion = project.getObjects().property(String.class); //gradle 4.3
+        oldestAllowedClientVersion.set(project.provider(launcherExtension::getVersion));
     }
 
     // Kalles vha refleksjon av gradle
@@ -39,7 +39,7 @@ public class ServerExtension {
     // Kalles vha refleksjon av gradle
     @SuppressWarnings("unused")
     public void libraries(Object... libraries) {
-        this.libraries.add(project.files().from(libraries));
+        this.libraries.from(libraries);
     }
 
     // Kalles vha refleksjon av gradle
@@ -69,7 +69,7 @@ public class ServerExtension {
     // Kalles vha refleksjon av gradle
     @SuppressWarnings("unused")
     public void oldestAllowedClientVersion(String oldestAllowedClientVersion) {
-        this.oldestAllowedClientVersion = oldestAllowedClientVersion;
+        this.oldestAllowedClientVersion.set(oldestAllowedClientVersion);
     }
 
     @InputFiles
@@ -78,7 +78,7 @@ public class ServerExtension {
     }
 
     @InputFiles
-    List<FileCollection> getLibraries() {
+    FileCollection getLibraries() {
         return libraries;
     }
 
@@ -103,7 +103,7 @@ public class ServerExtension {
     }
 
     @Input
-    String getOldestAllowedClientVersion() {
+    Property<String> getOldestAllowedClientVersion() {
         return oldestAllowedClientVersion;
     }
 

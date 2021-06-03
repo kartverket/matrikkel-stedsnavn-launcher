@@ -100,15 +100,6 @@ task serverJar(type: Jar) {
 }
 
 jar {
-    // Pluginen trenger denne, men den ligger pt ikke i maven
-    into('lib/packr') {
-        from 'lib/packr-all-4.0.0.jar'
-    }
-    into('jdk') {
-        from('jdk') {
-            include 'fonts/*'
-        }
-    }
     into('lib/client') {
         from(clientJar)
         from(configurations.clientRuntimeClasspath)

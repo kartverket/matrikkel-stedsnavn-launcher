@@ -17,7 +17,7 @@ def keystore = rootProject.file(System.getenv('keystore') ?: 'launcher/keystore/
 def keystore_alias = System.getenv('keystore_alias') ?: 'selfsign'
 def keystore_password = System.getenv('keystore_password') ?: rootProject.file('launcher/keystore/selfsign.txt').text
 
-auncher {
+launcher {
     // Dette er versjonen på matrikkelstarteren
     version '1.3.0'
     jvm {
@@ -28,6 +28,7 @@ auncher {
         locales = ['nb', 'nn']
     }
     server {
+        oldestAllowedClientVersion '1.3.0' //defaults to launcher.version
         webinf project.file('launcher/webinf')
         metainf project.file('launcher/metainf')
         webinfLibs configurations.serverRuntimeClasspath, tasks.serverJar
