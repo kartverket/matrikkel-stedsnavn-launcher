@@ -132,6 +132,12 @@ task sourceJar(type: Jar) {
     classifier "sources"
 }
 
+tasks.withType(AbstractPublishToMaven).configureEach {
+    doFirst {
+        logger.lifecycle "Publishing ${publication.groupId}:${publication.artifactId}:${publication.version}"
+    }
+}
+
 publishing {
     publications.all {
         if (it.name == 'pluginMaven') artifact sourceJar
