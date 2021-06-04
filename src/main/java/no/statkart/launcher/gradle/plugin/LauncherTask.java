@@ -44,6 +44,45 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 
 public class LauncherTask extends DefaultTask {
+    /**
+     * Template som holder konfigurasjon for klient.
+     * Filen må ligge i {@link ServerExtension#getGetdown() konfigurert katalog}.
+     * <br/><br/>
+     * Obligatorisk innhold er: <pre>{@code
+    # URL from which the client is downloaded
+    appbase = https://ignored/myclient/vault
+
+    # UI Configuration
+    ui.name = MyClient
+    ui.background_image = splash.png
+    ui.status = 10, 325, 510, 20
+    ui.status_text = 000000
+    ui.progress = 10, 355, 510, 20
+    ui.progress_bar = 95B9EE
+
+    # Main entry point for the application
+    class = com.foo.bar.myclient.MainFrameLauncher
+
+    jvmarg = -XX:+IgnoreUnrecognizedVMOptions
+    jvmarg = --illegal-access=deny
+    jvmarg = --add-opens=java.base/java.lang=ALL-UNNAMED
+
+    # Needed for some older libraries (ie xstream)
+    jvmarg = --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+    jvmarg = --add-opens=java.base/java.text=ALL-UNNAMED
+    jvmarg = --add-opens=java.base/java.util=ALL-UNNAMED
+    jvmarg = --add-opens=java.desktop/java.awt.font=ALL-UNNAMED
+
+    jvmarg = --add-exports=java.desktop/com.sun.imageio.spi=ALL-UNNAMED
+    jvmarg = --add-modules=java.sql,jdk.localedata
+
+    # Application jar files
+    @@code@@
+
+    resource = splash.png
+
+     * }</pre>
+     */
     static final String GETDOWN_TXT = "getdown.txt";
 
     private LauncherExtension utvidelse;
