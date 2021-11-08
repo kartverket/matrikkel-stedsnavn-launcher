@@ -25,14 +25,13 @@ class Input {
         Path iconPath = standard.getRot().resolve("login.png");
         Parametre input;
         do {
-            boolean brukerPassord = visBrukerPassord() || feil.isPresent() && feil.get().erBrukerPassordFeil();
             input = new InputDialog()
                     .medTittel(inputTittel())
                     .medMelding(melding)
                     .medIconPath(iconPath)
                     .visHeap(visHeap())
                     .visTjener(visTjener())
-                    .visBrukerPassord(brukerPassord)
+                    .visBrukerPassord(visBrukerPassord())
                     .medTidligereInputParametre(tidligereInputParametre)
                     .medTidligereFeil(feil.orElse(null))
                     .innhentInputParametre();
@@ -40,7 +39,7 @@ class Input {
                 // Bruker har valgt Avbryt
                 return null;
             }
-            if (brukerPassord) {
+            if (visBrukerPassord()) {
                 feil = kontroll.medBrukerPassord(input);
             } else {
                 feil = kontroll.utenBrukerPassord(input);
