@@ -1,13 +1,13 @@
 package no.statkart.launcher.gradle.plugin;
 
+import com.badlogicgames.packr.Packr;
+import com.badlogicgames.packr.PackrConfig;
 import com.threerings.getdown.tools.Digester;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.FileCollection;
-import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.util.GFileUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -49,43 +49,44 @@ public class LauncherTask extends DefaultTask {
      * Filen må ligge i {@link ServerExtension#getGetdown() konfigurert katalog}.
      * <br/><br/>
      * Obligatorisk innhold er: <pre>{@code
-    # URL from which the client is downloaded
-    appbase = https://ignored/myclient/vault
-
-    # UI Configuration
-    ui.name = MyClient
-    ui.background_image = splash.png
-    ui.status = 10, 325, 510, 20
-    ui.status_text = 000000
-    ui.progress = 10, 355, 510, 20
-    ui.progress_bar = 95B9EE
-
-    # Main entry point for the application
-    class = com.foo.bar.myclient.MainFrameLauncher
-
-    jvmarg = -XX:+IgnoreUnrecognizedVMOptions
-    jvmarg = --illegal-access=deny
-    jvmarg = --add-opens=java.base/java.lang=ALL-UNNAMED
-
-    # Needed for some older libraries (ie xstream)
-    jvmarg = --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
-    jvmarg = --add-opens=java.base/java.text=ALL-UNNAMED
-    jvmarg = --add-opens=java.base/java.util=ALL-UNNAMED
-    jvmarg = --add-opens=java.desktop/java.awt.font=ALL-UNNAMED
-
-    jvmarg = --add-exports=java.desktop/com.sun.imageio.spi=ALL-UNNAMED
-    jvmarg = --add-modules=java.sql,jdk.localedata
-
-    # Application jar files
-    @@code@@
-
-    resource = splash.png
-
+     * # URL from which the client is downloaded
+     * appbase = https://ignored/myclient/vault
+     *
+     * # UI Configuration
+     * ui.name = MyClient
+     * ui.background_image = splash.png
+     * ui.status = 10, 325, 510, 20
+     * ui.status_text = 000000
+     * ui.progress = 10, 355, 510, 20
+     * ui.progress_bar = 95B9EE
+     *
+     * # Main entry point for the application
+     * class = com.foo.bar.myclient.MainFrameLauncher
+     *
+     * jvmarg = -XX:+IgnoreUnrecognizedVMOptions
+     * jvmarg = --illegal-access=deny
+     * jvmarg = --add-opens=java.base/java.lang=ALL-UNNAMED
+     *
+     * # Needed for some older libraries (ie xstream)
+     * jvmarg = --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+     * jvmarg = --add-opens=java.base/java.text=ALL-UNNAMED
+     * jvmarg = --add-opens=java.base/java.util=ALL-UNNAMED
+     * jvmarg = --add-opens=java.desktop/java.awt.font=ALL-UNNAMED
+     *
+     * jvmarg = --add-exports=java.desktop/com.sun.imageio.spi=ALL-UNNAMED
+     * jvmarg = --add-modules=java.sql,jdk.localedata
+     *
+     * # Application jar files
+     * @@code@@
+     *
+     * resource = splash.png
+     *
      * }</pre>
      */
     static final String GETDOWN_TXT = "getdown.txt";
 
     private LauncherExtension utvidelse;
+
     @Nested
     public LauncherExtension getUtvidelse() {
         if (utvidelse == null) {
@@ -237,38 +238,46 @@ public class LauncherTask extends DefaultTask {
 
     private void packr(ClientExtension klient) throws IOException {
         Jvm jvm = Jvm.fraAlias(klient.getArch()).orElseThrow();
+        PackrConfig config = new PackrConfig();
+        if (jvm == Jvm.OSX) {
+            config.platform = PackrConfig.Platform.MacOS;
+            config.iconResource = klient.getIcon();
+        } else if (jvm == Jvm.LINUX) {
+            config.platform = PackrConfig.Platform.Linux64;
+        } else {
+            config.platform = PackrConfig.Platform.Windows64;
+        }
+        config.executable = klient.getExecutable();
+        config.mainClass = "no.statkart.launcher.client.Launcher";
+        config.jrePath = "jre";
+        config.jdk = "x";
+        config.cacheJre = toAbsolutePath("build/launcher/jdk/" + jvm.getAlias() + "-min").toFile();
+        config.vmArgs = new ArrayList<>();
+        config.outDir = toAbsolutePath("build/launcher/packr/" + klient.getName()).toFile();
+        try (Stream<Path> paths = Files.list(toAbsolutePath("build/launcher/lib"))) {
+            config.classpath = paths.map(Path::toString).collect(Collectors.toList());
+        }
+        config.verbose = true;
         try {
-            File bootClasspath = null;
-            PackrConfig config = new PackrConfig();
-            config.platform = jvm;
-            config.executable = klient.getExecutable();
-            config.mainClass = "no.statkart.launcher.client.Launcher";
-            config.cacheJre = toAbsolutePath("build/launcher/jdk/" + jvm.getAlias() + "-min").toFile();
-            config.outDir = toAbsolutePath("build/launcher/packr/" + klient.getName()).toFile();
-            try (Stream<Path> paths = Files.list(toAbsolutePath("build/launcher/lib"))) {
-                config.classpath = paths.map(Path::toString).collect(Collectors.toList());
-            }
-            if (jvm == Jvm.OSX) {
-                config.iconResource = klient.getIcon();
-            }
-            if (jvm == Jvm.WINDOWS) {
-                // Gjeldende workaround er å legge en hacket versjon av packr*.exe
-                // NB: Denne må komme først på classpath!
-                bootClasspath = klient.getIcon();
-            }
-            exec(config, bootClasspath);
-            // MAT-12826, legg til en .bat i tillegg til .exe på windows
-            if (jvm == Jvm.WINDOWS) {
-                try (Stream<Path> paths = Files.list(toAbsolutePath("build/launcher/lib"))) {
-                    String cp = paths.map(Path::getFileName).map(Path::toString).collect(Collectors.joining(";"));
-                    append(
-                            String.format("jre\\bin\\java -cp %s %s", cp, config.mainClass),
-                            String.format("build/launcher/packr/%s/%s.bat", klient.getName(), config.executable)
-                    );
-                }
-            }
+            new Packr().pack(config);
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+        if (jvm == Jvm.WINDOWS) {
+            // Dersom det finnes en alternativ exe-fil i prosjektet, bruk denne istedet
+            Path src = klient.getIcon().toPath().resolve("packr-windows-x64.exe");
+            if (Files.exists(src)) {
+                Path dst = config.outDir.toPath().resolve(klient.getExecutable() + ".exe");
+                Files.copy(src, dst, StandardCopyOption.REPLACE_EXISTING);
+            }
+            // MAT-12826, legg til en .bat i tillegg til .exe på windows
+            try (Stream<Path> paths = Files.list(toAbsolutePath("build/launcher/lib"))) {
+                String cp = paths.map(Path::getFileName).map(Path::toString).collect(Collectors.joining(";"));
+                append(
+                        String.format("jre\\bin\\java -cp %s %s", cp, config.mainClass),
+                        String.format("build/launcher/packr/%s/%s.bat", klient.getName(), config.executable)
+                );
+            }
         }
         copyResources("jdk/fonts", "build/launcher/packr/" + topDirectory(klient) + "/jre/lib/fonts");
         copy(klient.getGetdown(), "build/launcher/packr/" + topDirectory(klient) + "/work");
@@ -370,27 +379,6 @@ public class LauncherTask extends DefaultTask {
     private Path toAbsolutePath(String relativePath) {
         Path root = getProject().getProjectDir().toPath();
         return root.resolve(relativePath);
-    }
-
-    @OutputFile
-    public Provider<File> getPackrJar() {
-        return getProject().provider(() -> {
-            URL url = LauncherTask.class.getResource("/lib/packr/packr-all-4.0.0.jar");
-            File file = getProject().file("build/packr/packr.jar");
-            GFileUtils.copyURLToFile(url, file);
-            return file;
-        });
-    }
-
-    private void exec(PackrConfig config, File bootClasspath) {
-        getProject().javaexec(execSpecs -> {
-            config.decorateExecSpecs(execSpecs);
-            execSpecs.setMain("com.badlogicgames.packr.Packr");
-            if (bootClasspath != null) {
-                execSpecs.classpath(bootClasspath);
-            }
-            execSpecs.classpath(getPackrJar());
-        }).assertNormalExitValue();
     }
 
 }

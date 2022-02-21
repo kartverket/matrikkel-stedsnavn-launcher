@@ -1,1 +1,0 @@
-serverJar med serverRuntimeClasspath pakkes med i denne katalogen

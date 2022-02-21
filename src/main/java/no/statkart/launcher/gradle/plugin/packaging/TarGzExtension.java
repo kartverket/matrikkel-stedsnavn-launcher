@@ -2,7 +2,6 @@ package no.statkart.launcher.gradle.plugin.packaging;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
-import org.apache.commons.compress.archivers.tar.TarConstants;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 
 import java.io.BufferedOutputStream;
@@ -60,26 +59,8 @@ public class TarGzExtension implements PackagingExtension {
                     return FileVisitResult.CONTINUE;
                 }
             });
-            leggTilSymlink(fromDir, topDirectory, "jre/lib/jli", taos);
-            leggTilSymlink(fromDir, topDirectory, "jre/lib/amd64", taos);
         }
         return toFile;
-    }
-
-    private void leggTilSymlink(Path fromDir, String topDirectory, String mappe, TarArchiveOutputStream output) throws IOException {
-        if (Files.exists(fromDir.resolve(mappe))) {
-            return;
-        }
-        Path path = Paths.get(mappe);
-        if ("osx".equals(arch)) {
-            path = Paths.get(topDirectory).resolve("Contents").resolve("Resources").resolve(path);
-        } else {
-            path = Paths.get(topDirectory).resolve(path);
-        }
-        TarArchiveEntry link = new TarArchiveEntry(path.toString(), TarConstants.LF_SYMLINK);
-        link.setLinkName(".");
-        output.putArchiveEntry(link);
-        output.closeArchiveEntry();
     }
 
     private String toFilename() {
