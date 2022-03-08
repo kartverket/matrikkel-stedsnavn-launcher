@@ -279,7 +279,6 @@ public class LauncherTask extends DefaultTask {
                 );
             }
         }
-        copyResources("jdk/fonts", "build/launcher/packr/" + topDirectory(klient) + "/jre/lib/fonts");
         copy(klient.getGetdown(), "build/launcher/packr/" + topDirectory(klient) + "/work");
         replace("build/launcher/packr/" + topDirectory(klient) + "/work/client.properties", "@@version@@", utvidelse.getVersion());
     }
