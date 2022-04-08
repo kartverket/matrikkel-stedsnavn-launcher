@@ -109,8 +109,13 @@ public class ClientExtension {
             packagingExt.setArch(arch);
             packagingExt.setName(name);
             packagingExt.setVersion(version);
+            if (signingExt != null) {
+                // Sign main startup exe
+                signingExt.execute(fromDirPath.resolve(executable + ".exe"));
+            }
             Path toFilePath = packagingExt.execute(fromDirPath, toDirPath);
             if (signingExt != null) {
+                // Sign installer exe
                 signingExt.execute(toFilePath);
             }
             return toFilePath.getFileName().toString();

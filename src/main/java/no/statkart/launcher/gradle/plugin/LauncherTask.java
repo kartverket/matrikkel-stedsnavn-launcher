@@ -162,9 +162,7 @@ public class LauncherTask extends DefaultTask {
     private String asCode(FileCollection files) {
         StringBuilder sb = new StringBuilder();
         sb.append("code = client-dependencies.jar\n");
-        files.forEach(f ->
-                sb.append("resource = ").append(f.getName()).append('\n')
-        );
+        files.forEach(f -> sb.append("resource = ").append(f.getName()).append('\n'));
         return sb.toString();
     }
 
@@ -180,9 +178,7 @@ public class LauncherTask extends DefaultTask {
 
     private void opprettPathingJar(FileCollection files, String toFile) throws IOException {
         StringBuilder sb = new StringBuilder();
-        files.forEach(f ->
-                sb.append(f.getName()).append(' ')
-        );
+        files.forEach(f -> sb.append(f.getName()).append(' '));
         Manifest manifest = new Manifest();
         Attributes attr = manifest.getMainAttributes();
         attr.putValue("Manifest-Version", "1.0");
@@ -225,10 +221,7 @@ public class LauncherTask extends DefaultTask {
         }
         // Dette steget må utføres etter at alle jvm'ene er lastet ned og pakket ut
         for (Jvm jvm : jvms) {
-            jvm.jlink(
-                    utvidelse.getJvmUtvidelse().getModules(),
-                    utvidelse.getJvmUtvidelse().getLocales()
-            );
+            jvm.jlink(utvidelse.getJvmUtvidelse().getModules(), utvidelse.getJvmUtvidelse().getLocales());
         }
         for (ClientExtension klient : utvidelse.getKlienter()) {
             packr(klient);

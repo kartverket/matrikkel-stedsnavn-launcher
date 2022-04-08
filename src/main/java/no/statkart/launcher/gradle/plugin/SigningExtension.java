@@ -33,10 +33,13 @@ public class SigningExtension {
     }
 
     void execute(Path into) throws Exception {
-        KeyStore keystore = KeyStoreUtils.load(new File(store), "PKCS12", password, null);
-        AuthenticodeSigner signer = new AuthenticodeSigner(keystore, alias, password);
-        signer.withTimestamping(false);
-        signer.sign(new PEFile(into.toFile()));
+        // Støtter bare windows .exe-filer
+        if (into.getFileName().toString().endsWith(".exe")) {
+            KeyStore keystore = KeyStoreUtils.load(new File(store), "PKCS12", password, null);
+            AuthenticodeSigner signer = new AuthenticodeSigner(keystore, alias, password);
+            signer.withTimestamping(false);
+            signer.sign(new PEFile(into.toFile()));
+        }
     }
 
 }

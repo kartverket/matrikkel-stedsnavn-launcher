@@ -72,6 +72,7 @@ enum Jvm {
             System.out.println("Using existing jvm at " + destination);
             return;
         }
+        Files.createDirectories(destinationDir);
         System.out.println("Downloading jvm to " + destination);
         try (InputStream in = url.openStream()) {
             Files.copy(in, destination);
