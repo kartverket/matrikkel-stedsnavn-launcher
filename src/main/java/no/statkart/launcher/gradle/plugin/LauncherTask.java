@@ -142,6 +142,7 @@ public class LauncherTask extends DefaultTask {
         if (version != null && !version.isEmpty()) {
             replace("build/launcher/war/META-INF/MANIFEST.MF", "@@version@@", version);
         }
+        copyResources("lib/server", "build/launcher/war/WEB-INF/lib");
         copy(server.getWebinfLibs(), "build/launcher/war/WEB-INF/lib");
         for (Map.Entry<String, String> e : artifacts.entrySet()) {
             replace("build/launcher/war/WEB-INF/web.xml", "@@" + e.getKey() + "@@", e.getValue());
@@ -214,6 +215,7 @@ public class LauncherTask extends DefaultTask {
     }
 
     private void lagKlienter(JvmExtension jvmExtension) throws IOException {
+        copyResources("lib/client", "build/launcher/lib/");
         List<Jvm> jvms = jvmExtension.getConfiguredJvms();
         for (Jvm jvm : jvms) {
             jvm.setURL(utvidelse.getJvmUtvidelse().getUrl(jvm));
