@@ -28,6 +28,7 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -330,7 +331,7 @@ public class LauncherTask extends DefaultTask {
     private List<String> getResources(String resourceDir) throws IOException {
         URL resourceURL = getClass().getClassLoader().getResource(resourceDir);
         if (resourceURL == null) {
-            throw new IllegalStateException("Fant ikke resourceDir=" + resourceDir);
+            return Collections.emptyList();
         }
         List<String> resultat = new ArrayList<>();
         JarURLConnection urlcon = ((JarURLConnection) resourceURL.openConnection());
