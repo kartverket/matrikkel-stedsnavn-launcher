@@ -29,6 +29,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -198,7 +199,8 @@ public class LauncherTask extends DefaultTask {
         }
     }
 
-    private Map<String, String> lagKlientinstallereForNedlasting() {
+    private Map<String, String> lagKlientinstallereForNedlasting() throws IOException {
+        clean("build/launcher/war");
         Map<String, String> artifacts = new HashMap<>();
         for (ClientExtension klient : utvidelse.getKlienter()) {
             artifacts.put(klient.getName(),
@@ -212,7 +214,6 @@ public class LauncherTask extends DefaultTask {
     }
 
     private void lagKlienter(JvmExtension jvmExtension) throws IOException {
-        copyResources("lib/client", "build/launcher/lib/");
         List<Jvm> jvms = jvmExtension.getConfiguredJvms();
         for (Jvm jvm : jvms) {
             jvm.setURL(utvidelse.getJvmUtvidelse().getUrl(jvm));
@@ -224,6 +225,9 @@ public class LauncherTask extends DefaultTask {
         for (Jvm jvm : jvms) {
             jvm.jlink(utvidelse.getJvmUtvidelse().getModules(), utvidelse.getJvmUtvidelse().getLocales());
         }
+        clean("build/launcher/lib");
+        Files.createDirectories(toAbsolutePath("build/launcher/lib"));
+        copyResources("lib/client", "build/launcher/lib/");
         for (ClientExtension klient : utvidelse.getKlienter()) {
             packr(klient);
         }
@@ -349,6 +353,19 @@ public class LauncherTask extends DefaultTask {
             }
         }
         return resultat;
+    }
+
+    private void clean(String dir) throws IOException {
+        Path root = toAbsolutePath(dir);
+        if (Files.exists(root)) {
+            try (Stream<Path> s = Files.walk(root)) {
+                s.sorted(Comparator.reverseOrder()).forEach(p -> {
+                    try {
+                        Files.delete(p);
+                    } catch (IOException ignored) {}
+                });
+            }
+        }
     }
 
     private void copyResources(String resourceDir, String toDir) throws IOException {

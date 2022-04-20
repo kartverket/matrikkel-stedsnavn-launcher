@@ -20,6 +20,7 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -101,7 +102,7 @@ enum Jvm {
         Path source = destinationDir.resolve(alias);
         Path destination = destinationDir.resolve(alias + "-min").resolve("jre");
         if (Files.exists(destination)) {
-            return;
+            clean(destination);
         }
         Path jlink = findJlinkExecutable(destinationDir, jvmOfCurrentlyRunningOS());
         String[] cmd = {jlink.toString()
@@ -227,6 +228,18 @@ enum Jvm {
         }
         if (destinationDir == null) {
             throw new IllegalStateException("Destination directory not set");
+        }
+    }
+
+    private void clean(Path path) throws IOException {
+        if (Files.exists(path)) {
+            try (Stream<Path> s = Files.walk(path)) {
+                s.sorted(Comparator.reverseOrder()).forEach(p -> {
+                    try {
+                        Files.delete(p);
+                    } catch (IOException ignored) {}
+                });
+            }
         }
     }
 
