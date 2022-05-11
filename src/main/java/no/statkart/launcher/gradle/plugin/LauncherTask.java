@@ -234,6 +234,7 @@ public class LauncherTask extends DefaultTask {
     }
 
     private void packr(ClientExtension klient) throws IOException {
+        clean("build/launcher/packr/" + klient.getName());
         Jvm jvm = Jvm.fraAlias(klient.getArch()).orElseThrow();
         PackrConfig config = new PackrConfig();
         if (jvm == Jvm.OSX) {
