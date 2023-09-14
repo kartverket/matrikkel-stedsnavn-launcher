@@ -24,18 +24,14 @@ pipeline {
         GRADLE_USER_HOME = "${WORKSPACE}/gradle"
 
         GRADLEW_OPTIONS =
-            "-Dmaven.repo.local=${WORKSPACE}/.m2/repository " +
+            "-Dmaven.repo.local='${WORKSPACE}/.m2/repository' " +
             "-Dfile.encoding=UTF8 " +
             "--no-daemon " +
             "--stacktrace"
-        GRADLEW_CMD = "./gradlew ${GRADLEW_OPTIONS}"
 
         // URI for repository som det skal deployes til
         // Denne må være på formen http(s)://<brukernavn>:<passord>@<repository>
         MAVEN_PUBLISH = credentials('MAVEN_DEPLOY_RELEASES')
-
-        GIT_URL = 'ssh://git@bitbucket.statkart.no:7999/laun/launcher.git'
-        GIT_CREDENTIALS = '2c90ed8a-1f70-41f3-92e9-ce54dbd353c7' // builder2
     }
 
     options {
@@ -66,23 +62,17 @@ pipeline {
             }
         }
 
-        stage('Checkout launcher') {
-            steps {
-                gitShallowCheckout("refs/tags/${params.version}", GIT_URL, GIT_CREDENTIALS)
-            }
-        }
-
         stage('Prepare launcher') {
             steps {
                 // Den neste linjen kan fjernes etter hvert, men t.o.m. 1.2.12 må dette gjøres
                 sh 'chmod +x gradlew'
-                sh "${GRADLEW_CMD} clean"
+                sh "./gradlew ${GRADLEW_OPTIONS} clean"
             }
         }
 
         stage('Publish launcher') {
             steps {
-                sh "${GRADLEW_CMD} publish -Plauncher_version=${params.version}"
+                sh "./gradlew ${GRADLEW_OPTIONS} publish -Plauncher_version=${params.version}"
             }
         }
     }
