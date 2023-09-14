@@ -112,6 +112,8 @@ public class ClientExtension {
             if (signingExt != null) {
                 // Sign main startup exe
                 signingExt.execute(fromDirPath.resolve(executable + ".exe"));
+                // Sign javaw.exe
+                signingExt.execute(fromDirPath.resolve("jre/bin/javaw.exe"));
             }
             Path toFilePath = packagingExt.execute(fromDirPath, toDirPath);
             if (signingExt != null) {
