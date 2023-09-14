@@ -41,15 +41,6 @@ pipeline {
         skipStagesAfterUnstable()
     }
 
-    parameters {
-        string(
-                name: 'version',
-                defaultValue: '',
-                description: 'Versjonen som skal publiseres, f.eks. "1.2.1". Merk at denne må være samme som taggen i Git.',
-                trim: true
-        )
-    }
-
     stages {
         stage('Valider') {
             steps {
@@ -70,9 +61,12 @@ pipeline {
             }
         }
 
-        stage('Publish launcher') {
+        stage("Publish Matrikkel") {
+            when {
+                buildingTag()
+            }
             steps {
-                sh "./gradlew ${GRADLEW_OPTIONS} publish -Plauncher_version=${params.version}"
+                sh "./gradlew ${GRADLEW_OPTIONS} publish -Plauncher_version=${TAG_NAME}"
             }
         }
     }
