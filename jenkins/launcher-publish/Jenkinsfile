@@ -66,7 +66,8 @@ pipeline {
                 buildingTag()
             }
             steps {
-                sh "./gradlew ${GRADLEW_OPTIONS} publish -Plauncher_version=${TAG_NAME}"
+                echo "${TAG_NAME}"
+//                sh "./gradlew ${GRADLEW_OPTIONS} publish -Plauncher_version=${TAG_NAME}"
             }
         }
     }
