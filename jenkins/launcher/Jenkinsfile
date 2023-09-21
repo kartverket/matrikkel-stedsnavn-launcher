@@ -18,17 +18,10 @@ pipeline {
     }
 
     environment {
-        // Forhindre samtidighetsproblemer
-        // Tilsvarer "Force GRADLE_USER_HOME to use workspace" i "Gradle plugin"
-        GRADLE_USER_HOME = "${WORKSPACE}/gradle"
-
         GRADLEW_OPTIONS =
-            "-Dmaven.repo.local=${WORKSPACE}/.m2/repository " +
             "-Dfile.encoding=UTF8 " +
             "--refresh-dependencies " +
-            "--no-daemon " +
             "--stacktrace"
-        GRADLEW_CMD = "./gradlew ${GRADLEW_OPTIONS}"
     }
     options {
         timestamps()
@@ -42,19 +35,19 @@ pipeline {
             steps {
                 // Den neste linjen kan fjernes etter hvert, men t.o.m. 1.2.12 må dette gjøres
                 sh 'chmod +x gradlew'
-                sh "${GRADLEW_CMD} clean"
+                sh "./gradlew ${GRADLEW_OPTIONS} clean"
             }
         }
 
         stage('Build launcher') {
             steps {
-                sh "${GRADLEW_CMD} assemble"
+                sh "./gradlew ${GRADLEW_OPTIONS} assemble"
             }
         }
 
         stage('Test launcher') {
             steps {
-                sh "${GRADLEW_CMD} check"
+                sh "./gradlew ${GRADLEW_OPTIONS} check"
             }
             post {
                 always {
