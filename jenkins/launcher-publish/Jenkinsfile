@@ -19,14 +19,8 @@ pipeline {
     }
 
     environment {
-        // Forhindre samtidighetsproblemer
-        // Tilsvarer "Force GRADLE_USER_HOME to use workspace" i "Gradle plugin"
-        GRADLE_USER_HOME = "${WORKSPACE}/gradle"
-
         GRADLEW_OPTIONS =
-            "-Dmaven.repo.local='${WORKSPACE}/.m2/repository' " +
             "-Dfile.encoding=UTF8 " +
-            "--no-daemon " +
             "--stacktrace"
 
         // URI for repository som det skal deployes til
