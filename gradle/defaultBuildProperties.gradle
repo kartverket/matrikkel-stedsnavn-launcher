@@ -1,6 +1,5 @@
 [
         "launcher_version": "1.5-SNAPSHOT",
-        "maven_repo"      : "https://nexus.statkart.no/repository/public/",
 ].sort().each { keyValuePair ->
     applyDefaultValueForBuildProperty(keyValuePair.key, keyValuePair.value)
 }
