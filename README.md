@@ -12,7 +12,7 @@ Ved oppdatering av klient trenger man å deploye ny versjon av war fil for serve
 
 
 # Eksempel på bruk
-Se [matrikkelen](https://bitbucket.statkart.no/projects/MAT/repos/matrikkel/browse/client/client.gradle) for en faktisk implementasjon.
+Se [matrikkelen](https://github.com/kartverket/matrikkel/blob/develop/client/client.gradle) for en faktisk implementasjon.
 Kikk i de filene og mappene til matrikkelklienten som er referert over for å se hva som trengs av ekstra oppsett.
 
 Her følger et generelt gradle oppsett:
