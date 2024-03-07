@@ -1,0 +1,17 @@
+# nonk8s
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: matrikkel-stedsnavn-launcher
+  tags: [private]
+  links:
+    - url: https://github.com/kartverket/matrikkel-stedsnavn-launcher
+      title: matrikkel-stedsnavn-launcher på GitHub
+spec:
+  type: ops
+  lifecycle: production
+  owner: matrikkel
+  system: matrikkel
+  dependsOn:
+    - resource:default/J2EE_APPSERVER
+  providesApis: []
