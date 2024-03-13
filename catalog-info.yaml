@@ -1,0 +1,33 @@
+# nonk8s
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: matrikkel-stedsnavn-launcher-team
+spec:
+  type: team
+  parent: Eiendom
+  children: [matrikkel-stedsnavn-launcher-security-champion]
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: matrikkel-stedsnavn-launcher-security-champion
+  annotations:
+    github.com/user-login: lislei
+spec:
+  type: security-champion
+  parent: security-champions-Eiendom
+  members: [Matrikkel]
+  children: []
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: matrikkel-stedsnavn-launcher
+  links:
+    - url: https://github.com/kartverket/matrikkel-stedsnavn-launcher
+      title: matrikkel-stedsnavn-launcher på GitHub
+spec:
+  type: repo
+  lifecycle: production
+  owner: matrikkel-stedsnavn-launcher-team
