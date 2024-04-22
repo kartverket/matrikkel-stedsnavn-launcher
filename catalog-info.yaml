@@ -1,0 +1,39 @@
+# nonk8s
+apiVersion: "backstage.io/v1alpha1"
+kind: "Component"
+metadata:
+  name: "matrikkel-stedsnavn-launcher"
+  tags:
+  - "internal"
+spec:
+  type: "library"
+  lifecycle: "production"
+  owner: "heimdall"
+  system: "matrikkel"
+---
+apiVersion: "backstage.io/v1alpha1"
+kind: "Group"
+metadata:
+  name: "security_champion_matrikkel-stedsnavn-launcher"
+  title: "Security Champion matrikkel-stedsnavn-launcher"
+spec:
+  type: "security_champion"
+  parent: "eiendom_security_champions"
+  members:
+  - "lislei"
+  children:
+  - "resource:matrikkel-stedsnavn-launcher"
+---
+apiVersion: "backstage.io/v1alpha1"
+kind: "Resource"
+metadata:
+  name: "matrikkel-stedsnavn-launcher"
+  links:
+  - url: "https://github.com/kartverket/matrikkel-stedsnavn-launcher"
+    title: "matrikkel-stedsnavn-launcher på GitHub"
+spec:
+  type: "repo"
+  owner: "security_champion_matrikkel-stedsnavn-launcher"
+  system: "matrikkel"
+  dependencyOf:
+  - "component:matrikkel-stedsnavn-launcher"
