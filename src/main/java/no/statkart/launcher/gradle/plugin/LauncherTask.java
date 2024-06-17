@@ -4,6 +4,7 @@ import com.badlogicgames.packr.Packr;
 import com.badlogicgames.packr.PackrConfig;
 import com.threerings.getdown.tools.Digester;
 import org.gradle.api.DefaultTask;
+import org.gradle.api.GradleException;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.OutputFile;

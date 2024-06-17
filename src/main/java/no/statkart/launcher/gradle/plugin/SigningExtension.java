@@ -1,10 +1,10 @@
 package no.statkart.launcher.gradle.plugin;
 
 import net.jsign.AuthenticodeSigner;
-import net.jsign.KeyStoreUtils;
 import net.jsign.pe.PEFile;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.nio.file.Path;
 import java.security.KeyStore;
 
@@ -35,7 +35,11 @@ public class SigningExtension {
     void execute(Path into) throws Exception {
         // Støtter bare windows .exe-filer
         if (into.getFileName().toString().endsWith(".exe")) {
-            KeyStore keystore = KeyStoreUtils.load(new File(store), "PKCS12", password, null);
+            KeyStore keystore = KeyStore.getInstance("PKCS12");
+            File keystoreFile = new File(store);
+            try (FileInputStream fis = new FileInputStream(keystoreFile)) {
+                keystore.load(fis, password.toCharArray());
+            }
             AuthenticodeSigner signer = new AuthenticodeSigner(keystore, alias, password);
             signer.withTimestamping(false);
             signer.sign(new PEFile(into.toFile()));

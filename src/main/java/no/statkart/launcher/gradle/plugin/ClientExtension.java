@@ -7,7 +7,6 @@ import no.statkart.launcher.gradle.plugin.packaging.TarGzExtension;
 import no.statkart.launcher.gradle.plugin.packaging.ZipExtension;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
-import org.gradle.util.ConfigureUtil;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -69,14 +68,16 @@ public class ClientExtension {
     // Kalles vha refleksjon av gradle
     @SuppressWarnings("unused")
     public void packagingConfig(Closure<?> c) {
-        ConfigureUtil.configure(c, packagingExt);
+        c.setDelegate(packagingExt);
+        c.call();
     }
 
     // Kalles vha refleksjon av gradle
     @SuppressWarnings("unused")
     public void signing(Closure<?> c) {
         signingExt = new SigningExtension();
-        ConfigureUtil.configure(c, signingExt);
+        c.setDelegate(signingExt);
+        c.call();
     }
 
     public String getName() {
