@@ -10,8 +10,6 @@ spec:
   lifecycle: "production"
   owner: "heimdall"
   system: "matrikkel"
-  system: "grunnbok"
-  system: "stedsnavn"
 ---
 apiVersion: "backstage.io/v1alpha1"
 kind: "Group"
