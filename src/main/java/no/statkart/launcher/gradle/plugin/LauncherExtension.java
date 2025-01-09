@@ -6,7 +6,6 @@ import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Nested;
-import org.gradle.util.ConfigureUtil;
 
 public class LauncherExtension {
 
@@ -32,14 +31,14 @@ public class LauncherExtension {
     @SuppressWarnings("unused")
     public void jvm(Closure<?> c) {
         jvmExt = new JvmExtension();
-        ConfigureUtil.configure(c, jvmExt);
+        project.configure(jvmExt, c);
     }
 
     // Kalles vha refleksjon av gradle
     @SuppressWarnings("unused")
     public void server(Closure<?> c) {
         serverExt = new ServerExtension(this);
-        ConfigureUtil.configure(c, serverExt);
+        project.configure(serverExt, c);
     }
 
     // Kalles vha refleksjon av gradle
