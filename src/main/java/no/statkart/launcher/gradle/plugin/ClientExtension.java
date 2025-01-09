@@ -5,9 +5,9 @@ import no.statkart.launcher.gradle.plugin.packaging.PackagingExtension;
 import no.statkart.launcher.gradle.plugin.packaging.SevenZExtension;
 import no.statkart.launcher.gradle.plugin.packaging.TarGzExtension;
 import no.statkart.launcher.gradle.plugin.packaging.ZipExtension;
+import org.gradle.api.Project;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
-import org.gradle.util.ConfigureUtil;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -15,6 +15,7 @@ import java.nio.file.Path;
 
 public class ClientExtension {
 
+    private final Project project;
     private final String name;
 
     private String arch;
@@ -24,7 +25,8 @@ public class ClientExtension {
     private PackagingExtension packagingExt;
     private SigningExtension signingExt;
 
-    public ClientExtension(String name) {
+    public ClientExtension(String name, Project project) {
+        this.project = project;
         this.name = name;
     }
 
@@ -69,14 +71,14 @@ public class ClientExtension {
     // Kalles vha refleksjon av gradle
     @SuppressWarnings("unused")
     public void packagingConfig(Closure<?> c) {
-        ConfigureUtil.configure(c, packagingExt);
+        project.configure(packagingExt, c);
     }
 
     // Kalles vha refleksjon av gradle
     @SuppressWarnings("unused")
     public void signing(Closure<?> c) {
         signingExt = new SigningExtension();
-        ConfigureUtil.configure(c, signingExt);
+        project.configure(signingExt, c);
     }
 
     public String getName() {
