@@ -65,18 +65,7 @@ public class LauncherTask extends DefaultTask {
      * # Main entry point for the application
      * class = com.foo.bar.myclient.MainFrameLauncher
      *
-     * jvmarg = -XX:+IgnoreUnrecognizedVMOptions
-     * jvmarg = --illegal-access=deny
-     * jvmarg = --add-opens=java.base/java.lang=ALL-UNNAMED
-     *
-     * # Needed for some older libraries (ie xstream)
-     * jvmarg = --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
-     * jvmarg = --add-opens=java.base/java.text=ALL-UNNAMED
-     * jvmarg = --add-opens=java.base/java.util=ALL-UNNAMED
-     * jvmarg = --add-opens=java.desktop/java.awt.font=ALL-UNNAMED
-     *
-     * jvmarg = --add-exports=java.desktop/com.sun.imageio.spi=ALL-UNNAMED
-     * jvmarg = --add-modules=java.sql,jdk.localedata
+     * jvmarg = -XX:MaxRAM=4g
      *
      * # Application jar files
      * @@code@@
