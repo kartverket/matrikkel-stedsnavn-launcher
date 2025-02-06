@@ -10,7 +10,7 @@ public class LauncherPlugin implements Plugin<Project> {
         // Navn på blokken som konfigurerer denne pluginen i gradle-fila
         project.getExtensions().create("launcher", LauncherExtension.class, project);
         // Navn på tasken som kjører denne pluginen
-        project.getTasks().create("launcher", LauncherTask.class);
+        project.getTasks().register("launcher", LauncherTask.class);
     }
 
 }
