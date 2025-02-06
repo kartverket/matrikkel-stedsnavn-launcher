@@ -124,7 +124,7 @@ task sourceJar(type: Jar) {
     from sourceSets.main.allSource
     from sourceSets.client.allSource
     from sourceSets.server.allSource
-    classifier "sources"
+    archiveClassifier.set("sources")
 }
 
 tasks.withType(AbstractPublishToMaven).configureEach {
