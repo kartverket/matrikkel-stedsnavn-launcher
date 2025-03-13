@@ -31,10 +31,11 @@ sourceSets {
 }
 
 dependencies {
-    clientImplementation 'com.threerings.getdown:getdown-launcher:1.8.6@jar'
+    clientImplementation 'io.github.bekoenig.getdown:getdown-launcher:2.0.0:jar-with-dependencies'
     serverCompileOnly 'jakarta.servlet:jakarta.servlet-api:5.0.0'
 
     api 'org.apache.commons:commons-compress:1.21'
+    implementation 'io.github.bekoenig.getdown:getdown-core:2.0.0'
     implementation 'com.threerings.getdown:getdown-core:1.8.6'
     implementation 'com.badlogicgames.packr:packr-all:4.0.0'
     implementation 'net.jsign:jsign-core:4.0'

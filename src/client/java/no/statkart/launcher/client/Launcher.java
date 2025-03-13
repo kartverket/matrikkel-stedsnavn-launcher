@@ -1,6 +1,6 @@
 package no.statkart.launcher.client;
 
-import com.threerings.getdown.launcher.GetdownApp;
+import io.github.bekoenig.getdown.launcher.GetdownApp;
 
 import javax.swing.*;
 import java.io.BufferedOutputStream;

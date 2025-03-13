@@ -2,6 +2,7 @@ package no.statkart.launcher.gradle.plugin;
 
 import com.badlogicgames.packr.Packr;
 import com.badlogicgames.packr.PackrConfig;
+//import io.github.bekoenig.getdown.tools.Digester;
 import com.threerings.getdown.tools.Digester;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.FileCollection;
