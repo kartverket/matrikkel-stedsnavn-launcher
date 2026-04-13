@@ -16,6 +16,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  MAJ_VERSION: 1
+
 jobs:
   calculate-version:
     name: Calculate Version
@@ -31,7 +34,7 @@ jobs:
           if [[ -n "${{ inputs.launcher_version }}" ]]; then
               version="${{ inputs.launcher_version }}"
           else
-              version=".$(date -u '+%Y.%m.%d-%H.%M')-$(echo "${GITHUB_SHA}" | cut -c1-7)"
+              version="${{ env.MAJ_VERSION }}.$(date -u '+%Y.%m.%d-%H.%M')-$(echo "${GITHUB_SHA}" | cut -c1-7)"
           fi
           echo "version=${version}" >> "$GITHUB_OUTPUT"
 
