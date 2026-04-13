@@ -13,11 +13,13 @@ repositories {
     mavenLocal()
     mavenCentral()
     maven {
-        name = 'intern-nexus'; url = 'https://nexus.statkart.no/repository/public/'
+        name = 'NimblyGames'
+        url = 'https://artifactory.nimblygames.com/artifactory/ng-public-release/'
         content {
-            includeGroup 'com.badlogicgames.packr' //https://github.com/libgdx/packr : until published to Maven Central
+            includeGroup 'com.badlogicgames.packr'
         }
-    }}
+    }
+}
 
 sourceSets {
     client
