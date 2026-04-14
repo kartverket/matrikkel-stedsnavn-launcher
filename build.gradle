@@ -13,11 +13,13 @@ repositories {
     mavenLocal()
     mavenCentral()
     maven {
-        name = 'intern-nexus'; url = 'https://nexus.statkart.no/repository/public/'
+        name = 'NimblyGames'
+        url = 'https://artifactory.nimblygames.com/artifactory/ng-public-release/'
         content {
-            includeGroup 'com.badlogicgames.packr' //https://github.com/libgdx/packr : until published to Maven Central
+            includeGroup 'com.badlogicgames.packr'
         }
-    }}
+    }
+}
 
 sourceSets {
     client
@@ -138,15 +140,12 @@ publishing {
         if (it.name == 'pluginMaven') artifact sourceJar
     }
     repositories {
-        String mavenUpload = System.getenv('MAVEN_PUBLISH')
         maven {
-            if (mavenUpload) {
-                String creds = mavenUpload.split('@|//')[1]
-                url mavenUpload.replace(creds.concat('@'), '') // url kommer i konsoll - ikke ha credentials der
-                credentials {
-                    username creds.split(':')[0] ?: ""
-                    password creds.split(':')[1] ?: ""
-                }
+            name = "GitHubPackages"
+            url = "https://maven.pkg.github.com/kartverket/matrikkel-stedsnavn-launcher"
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
             }
         }
     }

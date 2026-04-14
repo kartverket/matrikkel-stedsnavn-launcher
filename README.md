@@ -5,10 +5,28 @@ Etter at installasjonen er fullført, kan man starte en binærfil som viser en l
 Denne dialogen oppretter kontakt med en webserver som sjekker bruker og passord. Dersom dette er korrekt, laster startprogrammet
 ned en klient som deretter startes.
 
-# Versjonering
+# Versjonering av launcher
 Ved oppdatering av JDK eller launcher plugin krever dette at man setter ny verdi i launcher.version. 
 
 Ved oppdatering av klient trenger man å deploye ny versjon av war fil for server. Launcher versjon beholdes.
+
+
+# Versjonsnummer
+Pakkene har versjonsnummer som er av formatet `[Major version].[Date]-[Time]-[SHA]`
+Alle pakker har samme versjon, og versjonsnummeret oppdateres ved hver publisering.
+
+`[Major version]` oppdateres ved breaking changes og kan endres i [build-publish.yml](.github/workflows/build-publish.yml) workflowen.
+
+
+# Publisering
+Pakkene ble tidligere publisert til Nexus. Gamle pakker er migrert til GitHub Packages.
+
+Nye pakker publiseres til [GitHub Packages](https://github.com/orgs/kartverket/packages?repo_name=matrikkel-stedsnavn-launcher) via [build-publish.yml](.github/workflows/build-publish.yml) workflowen.
+Ved hver push til `master` så vil det bygges og publiseres en ny versjon av pakkene.
+
+
+# Releasetesting
+Tester kjøres automatisk som en del av [build-publish.yml](.github/workflows/build-publish.yml) workflowen ved PR og push til `master`.
 
 
 # Eksempel på bruk
