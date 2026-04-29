@@ -34,7 +34,7 @@ Se [matrikkelen](https://github.com/kartverket/matrikkel/blob/develop/client/cli
 Kikk i de filene og mappene til matrikkelklienten som er referert over for å se hva som trengs av ekstra oppsett.
 
 Her følger et generelt gradle oppsett:
-```
+```groovy
 import org.apache.commons.compress.archivers.sevenz.SevenZMethod
 
 plugins {
@@ -81,7 +81,8 @@ launcher {
                 sfx project.file('launcher/7z/7zsd_Deflate_x64.sfx')
                 sfxConfig project.file('launcher/7z/7zsd_config.txt')
             }
-            signing {
+            signing 'keystore'
+            signingConfig {
                 store keystore
                 alias keystore_alias
                 password keystore_password
@@ -92,6 +93,16 @@ launcher {
             executable 'start'
             getdown project.file('launcher/getdown/client')
             packaging 'zip'
+            signing 'digicert'
+            signingConfig {
+                apiKey '???'
+                clientCertificateFile '???'
+                clientCertificatePassword '???'
+                keypairAlias '???'  
+                // Optional properties
+                smctlPath 'smctl' // Default: 'smctl'
+                host 'https://url.to.digicert.com' // Default: 'smcthttps://clientauth.one.digicert.coml'
+            }
         }
         'starter-linux' {
             arch 'linux'

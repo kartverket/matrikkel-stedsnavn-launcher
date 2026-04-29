@@ -1,4 +1,4 @@
-package no.statkart.launcher.gradle.plugin;
+package no.statkart.launcher.gradle.plugin.signing;
 
 import net.jsign.AuthenticodeSigner;
 import net.jsign.KeyStoreUtils;
@@ -8,31 +8,24 @@ import java.io.File;
 import java.nio.file.Path;
 import java.security.KeyStore;
 
-public class SigningExtension {
-
+public class KeystoreSigningExtension implements SigningExtension {
     private String store;
     private String alias;
     private String password;
 
-    // Kalles vha refleksjon av gradle
-    @SuppressWarnings("unused")
     public void store(String store) {
         this.store = store;
     }
 
-    // Kalles vha refleksjon av gradle
-    @SuppressWarnings("unused")
     private void alias(String alias) {
         this.alias = alias;
     }
 
-    // Kalles vha refleksjon av gradle
-    @SuppressWarnings("unused")
     private void password(String password) {
         this.password = password;
     }
 
-    void execute(Path into) throws Exception {
+    public void execute(Path into) throws Exception {
         // Støtter bare windows .exe-filer
         if (into.getFileName().toString().endsWith(".exe")) {
             KeyStore keystore = KeyStoreUtils.load(new File(store), "PKCS12", password, null);

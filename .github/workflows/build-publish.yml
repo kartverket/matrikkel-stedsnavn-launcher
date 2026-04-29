@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  MAJ_VERSION: 2
+  MAJ_VERSION: 3
 
 jobs:
   calculate-version:

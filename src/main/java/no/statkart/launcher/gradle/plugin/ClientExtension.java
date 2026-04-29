@@ -6,6 +6,9 @@ import no.statkart.launcher.gradle.plugin.packaging.SevenZExtension;
 import no.statkart.launcher.gradle.plugin.packaging.TarGzExtension;
 import no.statkart.launcher.gradle.plugin.packaging.ZipExtension;
 import org.gradle.api.Project;
+import no.statkart.launcher.gradle.plugin.signing.DigiCertSigningExtension;
+import no.statkart.launcher.gradle.plugin.signing.KeystoreSigningExtension;
+import no.statkart.launcher.gradle.plugin.signing.SigningExtension;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 
@@ -76,8 +79,18 @@ public class ClientExtension {
 
     // Kalles vha refleksjon av gradle
     @SuppressWarnings("unused")
-    public void signing(Closure<?> c) {
-        signingExt = new SigningExtension();
+    public void signing(String signing) {
+        if ("keystore".equals(signing)) {
+            signingExt = new KeystoreSigningExtension();
+        } else if ("digicert".equals(signing)) {
+            signingExt = new DigiCertSigningExtension();
+        } else {
+            throw new IllegalArgumentException("Ukjent signeringsmetode '" + signing + "'");
+        }
+    }
+    // Kalles vha refleksjon av gradle
+    @SuppressWarnings("unused")
+    public void signingConfig(Closure<?> c) {
         project.configure(signingExt, c);
     }
 
