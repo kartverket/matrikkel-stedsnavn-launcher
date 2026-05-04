@@ -66,9 +66,9 @@ public class DigiCertSigningExtension implements SigningExtension {
     private boolean shouldSign(Path path) {
         var name = path.getFileName().toString().toLowerCase(Locale.ROOT);
         var isSupportedFile = name.endsWith(".exe");
-        var isCI = Boolean.parseBoolean(System.getenv("CI"));
+        var digicertSigning = Boolean.parseBoolean(System.getenv("DIGICERT_SIGN"));
 
-        return isSupportedFile && isCI;
+        return isSupportedFile && digicertSigning;
     }
 
     private void validateSetup() {
