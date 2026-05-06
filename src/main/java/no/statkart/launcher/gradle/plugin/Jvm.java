@@ -178,7 +178,7 @@ enum Jvm {
              GzipCompressorInputStream gzipInputStream = new GzipCompressorInputStream(bufferedInputStream);
              TarArchiveInputStream tarArchiveInputStream = new TarArchiveInputStream(gzipInputStream)) {
             TarArchiveEntry entry;
-            while ((entry = tarArchiveInputStream.getNextTarEntry()) != null) {
+            while ((entry = tarArchiveInputStream.getNextEntry()) != null) {
                 Path path = outputDirPath.resolve(entry.getName());
                 if (entry.isDirectory()) {
                     Files.createDirectories(path);
