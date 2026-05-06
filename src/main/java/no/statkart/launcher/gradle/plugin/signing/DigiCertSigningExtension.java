@@ -41,7 +41,9 @@ public class DigiCertSigningExtension implements SigningExtension {
                 smctlPath,
                 "sign",
                 "--keypair-alias", keypairAlias,
-                "--input", into.toAbsolutePath().toString()
+                "--input", into.toAbsolutePath().toString(),
+                "--simple",
+                "--verbose"
             ).inheritIO();
 
             Map<String, String> env = pb.environment();
