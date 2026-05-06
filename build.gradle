@@ -34,7 +34,7 @@ sourceSets {
 
 dependencies {
     clientImplementation 'com.threerings.getdown:getdown-launcher:1.8.8@jar'
-    serverCompileOnly 'jakarta.servlet:jakarta.servlet-api:5.0.0'
+    serverCompileOnly 'jakarta.servlet:jakarta.servlet-api:6.1.0'
 
     api 'org.apache.commons:commons-compress:1.21'
     implementation 'com.threerings.getdown:getdown-core:1.8.8'
