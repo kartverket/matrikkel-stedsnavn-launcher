@@ -4,9 +4,9 @@ kind: "Component"
 metadata:
   name: "matrikkel-stedsnavn-launcher"
   tags:
-  - "internal"
+  - "public"
 spec:
   type: "library"
   lifecycle: "production"
   owner: "heimdall"
-  system: "matrikkel"
+  system: "m22"
