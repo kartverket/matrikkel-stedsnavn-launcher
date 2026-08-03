@@ -58,7 +58,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v6
+        uses: gradle/actions/wrapper-validation@v6.2.0
 
       - name: Build
         run: ./gradlew clean assemble --refresh-dependencies --stacktrace -Dfile.encoding=UTF8 -Plauncher_version=${{ needs.calculate-version.outputs.version }}
@@ -81,7 +81,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v6
+        uses: gradle/actions/wrapper-validation@v6.2.0
 
       - name: Run tests
         run: ./gradlew check --continue --stacktrace -Dfile.encoding=UTF8 -Plauncher_version=${{ needs.calculate-version.outputs.version }}
