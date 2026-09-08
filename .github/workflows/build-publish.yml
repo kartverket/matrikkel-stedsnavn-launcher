@@ -89,6 +89,8 @@ jobs:
 
       - name: Run tests
         run: ./gradlew check --continue --stacktrace -Dfile.encoding=UTF8 -Plauncher_version=${{ needs.calculate-version.outputs.version }}
+        env:
+          PACKAGES_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
 
       - name: Publish Test Report
         if: always()
@@ -126,3 +128,4 @@ jobs:
         run: ./gradlew publish --stacktrace -Dfile.encoding=UTF8 -Plauncher_version=${{ needs.calculate-version.outputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PACKAGES_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
