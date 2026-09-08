@@ -13,8 +13,12 @@ repositories {
     mavenLocal()
     mavenCentral()
     maven {
-        name = 'NimblyGames'
-        url = 'https://artifactory.nimblygames.com/artifactory/ng-public-release/'
+        name = 'KartverketThirdparty'
+        url = 'https://maven.pkg.github.com/kartverket/thirdparty-maven'
+        credentials {
+            username = System.getenv("GITHUB_ACTOR") ?: System.getenv("GITHUB_USER") ?: "token"
+            password = System.getenv("PACKAGES_TOKEN") ?: System.getenv("KV_PACKAGES_PAT") ?: System.getenv("GH_PACKAGES_PAT")
+        }
         content {
             includeGroup 'com.badlogicgames.packr'
         }
