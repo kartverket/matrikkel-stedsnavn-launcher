@@ -62,13 +62,10 @@ jobs:
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@v6.3.0
 
-      - name: Check GitHub actor
-        run: echo "GITHUB_ACTOR=$GITHUB_ACTOR"
-
       - name: Build
         run: ./gradlew clean assemble --refresh-dependencies --stacktrace -Dfile.encoding=UTF8 -Plauncher_version=${{ needs.calculate-version.outputs.version }}
         env:
-          PACKAGES_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
+          PACKAGES_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN  }}
 
   test:
     name: Test
