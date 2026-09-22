@@ -206,6 +206,7 @@ public class LauncherTask extends DefaultTask {
         List<Jvm> jvms = jvmExtension.getConfiguredJvms();
         for (Jvm jvm : jvms) {
             jvm.setURL(utvidelse.getJvmUtvidelse().getUrl(jvm));
+            jvm.setJmodsURL(utvidelse.getJvmUtvidelse().getJmodsUrl(jvm));
             jvm.setDestinationDir(toAbsolutePath("build/launcher/jdk"));
             jvm.download();
             jvm.unpack();

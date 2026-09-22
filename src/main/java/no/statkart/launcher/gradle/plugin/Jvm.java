@@ -23,6 +23,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
@@ -37,6 +38,7 @@ enum Jvm {
 
     private Jvm currentOsJvm;
     private URL url;
+    private URL jmodsUrl;
     private Path destinationDir;
 
     static Optional<Jvm> fraAlias(String alias) {
@@ -61,13 +63,42 @@ enum Jvm {
         this.url = new URL(urlString);
     }
 
+    /**
+     * Fra og med Temurin 25 er ikke lenger {@code jmods} inkludert i hoved-JDK-arkivet,
+     * men publisert som et eget nedlastbart artefakt (f.eks. {@code OpenJDK25U-jmods_x64_linux_hotspot_...tar.gz}).
+     * Denne URL-en er valgfri: dersom den ikke settes, antas det at {@code jmods} allerede
+     * finnes inni hoved-JDK-arkivet (som er tilfellet for JDK 17/21 og eldre).
+     */
+    void setJmodsURL(String urlString) throws IOException {
+        this.jmodsUrl = (urlString == null) ? null : new URL(urlString);
+    }
+
     void setDestinationDir(Path destinationDir) {
         this.destinationDir = destinationDir;
     }
 
     void download() throws IOException {
         checkState();
-        Path filename = Paths.get(url.getPath()).getFileName();
+        downloadArtifact(url);
+        if (jmodsUrl != null) {
+            downloadArtifact(jmodsUrl);
+        }
+    }
+
+    void unpack() throws IOException {
+        checkState();
+        unpackArtifact(url, destinationDir.resolve(alias));
+        if (jmodsUrl != null) {
+            unpackArtifact(jmodsUrl, jmodsDestination());
+        }
+    }
+
+    private Path jmodsDestination() {
+        return destinationDir.resolve(alias + "-jmods");
+    }
+
+    private void downloadArtifact(URL artifactUrl) throws IOException {
+        Path filename = Paths.get(artifactUrl.getPath()).getFileName();
         Path destination = destinationDir.resolve(filename);
         if (Files.isRegularFile(destination)) {
             System.out.println("Using existing jvm at " + destination);
@@ -75,18 +106,16 @@ enum Jvm {
         }
         Files.createDirectories(destinationDir);
         System.out.println("Downloading jvm to " + destination);
-        try (InputStream in = url.openStream()) {
+        try (InputStream in = artifactUrl.openStream()) {
             Files.copy(in, destination);
         }
     }
 
-    void unpack() throws IOException {
-        checkState();
-        Path destination = destinationDir.resolve(alias);
+    private void unpackArtifact(URL artifactUrl, Path destination) throws IOException {
         if (Files.exists(destination)) {
             return;
         }
-        Path filename = Paths.get(url.getPath()).getFileName();
+        Path filename = Paths.get(artifactUrl.getPath()).getFileName();
         Path source = destinationDir.resolve(filename);
         if (isZip(source)) {
             unzip(source, destination);
@@ -105,8 +134,9 @@ enum Jvm {
             clean(destination);
         }
         Path jlink = findJlinkExecutable(destinationDir, jvmOfCurrentlyRunningOS());
+        Path jmodsSearchRoot = (jmodsUrl != null) ? jmodsDestination() : source;
         String[] cmd = {jlink.toString()
-                , "--module-path", getJModsDirectory(source).toString()
+                , "--module-path", getJModsDirectory(jmodsSearchRoot).toString()
                 , "--add-modules", String.join(",", modules)
                 , "--include-locales", String.join(",", locales)
                 , "--output", destination.toString()
@@ -149,10 +179,14 @@ enum Jvm {
         return path.getFileName().toString().endsWith(".tar.gz");
     }
 
-    private Path getJModsDirectory(Path dir) throws IOException {
+    Path getJModsDirectory(Path dir) throws IOException {
         try (Stream<Path> paths = Files.walk(dir)) {
             return paths.filter(path -> Files.isDirectory(path) && path.getFileName().toString().equals("jmods"))
-                    .findFirst().orElseThrow();
+                    .findFirst()
+                    .orElseThrow(() -> new NoSuchElementException(
+                            "No jmods directory found under " + dir
+                                    + "; for JDK 25+ where jmods is published as a separate download,"
+                                    + " you must configure a jmods URL (e.g. jmodsUrlLinux/jmodsUrlOsx/jmodsUrlWindows)"));
         }
     }
 
