@@ -56,6 +56,13 @@ launcher {
         urlWindows = "$devbinBaseUrl/bin/java/jdk/OpenJDK11U-jdk_x64_windows_$jvm11Version.zip"
         urlLinux = "$devbinBaseUrl/bin/java/jdk/OpenJDK11U-jdk_x64_linux_$jvm11Version.tar.gz"
         urlOsx = "$devbinBaseUrl/bin/java/jdk/OpenJDK11U-jdk_x64_osx_$jvm11Version.tar.gz"
+        // jmodsUrlWindows/jmodsUrlLinux/jmodsUrlOsx: kun nødvendig fra og med Temurin/OpenJDK 25,
+        // der Adoptium publiserer "jmods" som et eget artefakt istedenfor å bundle det inni
+        // hoved-JDK-arkivet. Eldre JDK-er (som 11/17/21 over) trenger IKKE disse, siden jmods
+        // da allerede ligger inni JDK-arkivet.
+        // jmodsUrlWindows = "$devbinBaseUrl/bin/java/jdk/OpenJDK25U-jmods_x64_windows_$jvm25Version.zip"
+        // jmodsUrlLinux = "$devbinBaseUrl/bin/java/jdk/OpenJDK25U-jmods_x64_linux_$jvm25Version.tar.gz"
+        // jmodsUrlOsx = "$devbinBaseUrl/bin/java/jdk/OpenJDK25U-jmods_x64_mac_$jvm25Version.tar.gz"
         modules = ['java.sql', 'java.desktop', 'java.naming', 'java.rmi', 'java.management', 'jdk.localedata', 'jdk.jdwp.agent']
         locales = ['nb', 'nn']
     }
