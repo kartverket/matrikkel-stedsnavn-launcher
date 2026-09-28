@@ -142,8 +142,11 @@ public class JvmTest {
 
     /**
      * Simulerer JDK 25+ der Adoptium/Temurin publiserer {@code jmods} som et separat
-     * artefakt. Når en jmods-URL er konfigurert, skal denne lastes ned/pakkes ut og
-     * brukes fremfor å lete inni hoved-JDK-arkivet.
+     * artefakt. Ekte Adoptium-arkiv pakker jmod-filene direkte inn i en toppmappe med et
+     * versjonsavhengig navn (f.eks. {@code jdk-25.0.4+7-jmods/java.base.jmod}), uten en egen
+     * undermappe som heter "jmods". unpack() skal droppe denne toppmappen og legge
+     * jmod-filene rett inn i en mappe vi selv navngir "jmods", slik at getJModsDirectory()
+     * finner dem med samme enkle oppslag som for hoved-JDK-arkivet.
      */
     @Test
     public void testJdk25StyleSplitArchivesWorkWhenJmodsUrlConfigured() throws IOException {
@@ -153,12 +156,13 @@ public class JvmTest {
         Path jdkArchive = downloadDir.resolve("jdk25_x64_linux.tar.gz");
         // Hoved-JDK-arkivet inneholder IKKE jmods, slik som ekte Temurin 25-arkiver.
         writeTarGz(jdkArchive, List.of(
-                "jdk-25/bin/java"
+                "jdk-25.0.4+7/bin/java"
         ));
 
         Path jmodsArchive = downloadDir.resolve("jmods25_x64_linux.tar.gz");
+        // Ekte Adoptium-format: jmod-filene ligger direkte i toppmappen, ingen nestet "jmods".
         writeTarGz(jmodsArchive, List.of(
-                "jdk-25/jmods/java.base.jmod"
+                "jdk-25.0.4+7-jmods/java.base.jmod"
         ));
 
         Jvm jvm = Jvm.LINUX;
@@ -174,11 +178,13 @@ public class JvmTest {
         assertThatThrownBy(() -> jvm.getJModsDirectory(unpackedJdk))
                 .isInstanceOf(java.util.NoSuchElementException.class);
 
-        // Men den separat utpakkede jmods-mappen skal inneholde jmods.
+        // Men den separat utpakkede jmods-mappen skal inneholde jmods, uavhengig av
+        // arkivets egen (versjonsavhengige) toppmappenavn.
         Path unpackedJmods = destinationDir.resolve(jvm.getAlias() + "-jmods");
         Path jmodsDir = jvm.getJModsDirectory(unpackedJmods);
         assertThat(jmodsDir).isDirectory();
         assertThat(jmodsDir.getFileName().toString()).isEqualTo("jmods");
+        assertThat(jmodsDir.resolve("java.base.jmod")).isRegularFile();
     }
 
     /**
