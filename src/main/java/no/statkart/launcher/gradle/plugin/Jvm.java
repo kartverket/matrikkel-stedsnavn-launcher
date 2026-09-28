@@ -87,16 +87,31 @@ enum Jvm {
 
     void unpack() throws IOException {
         checkState();
-        unpackArtifact(url, destinationDir.resolve(alias), false);
+        unpackArtifact(url, destinationDir.resolve(alias));
         if (jmodsUrl != null) {
+            unpackArtifact(jmodsUrl, jmodsDestination());
             // Adoptium/Temurins frittstående jmods-arkiv for JDK 25+ (f.eks.
-            // "OpenJDK25U-jmods_x64_linux_hotspot_....tar.gz") har jmod-filene direkte i en
-            // toppmappe med et versjonsavhengig navn (f.eks. "jdk-25.0.4+7-jmods/java.base.jmod"),
-            // i motsetning til hoved-JDK-arkivet der de ligger i en undermappe som heter "jmods".
-            // Vi dropper derfor arkivets egen toppmappe og pakker innholdet direkte inn i en mappe
-            // vi selv navngir "jmods", slik at getJModsDirectory() kan bruke samme enkle oppslag
-            // uansett hvilken JDK-versjon/kilde jmods kommer fra.
-            unpackArtifact(jmodsUrl, jmodsDestination().resolve("jmods"), true);
+            // "OpenJDK25U-jmods_x64_linux_hotspot_....tar.gz") pakkes ut med en egen,
+            // versjonsavhengig toppmappe (f.eks. "jdk-25.0.4+7-jmods") som inneholder
+            // .jmod-filene direkte, i motsetning til hoved-JDK-arkivet der de ligger i en
+            // undermappe som heter "jmods". Vi gir derfor den utpakkede toppmappen nytt navn
+            // til "jmods", slik at getJModsDirectory() kan bruke samme enkle oppslag uansett
+            // hvilken JDK-versjon/kilde jmods kommer fra.
+            renameJmodsArchiveTopLevelDirectory();
+        }
+    }
+
+    private void renameJmodsArchiveTopLevelDirectory() throws IOException {
+        Path jmods = jmodsDestination().resolve("jmods");
+        if (Files.exists(jmods)) {
+            return;
+        }
+        try (Stream<Path> entries = Files.list(jmodsDestination())) {
+            Path topLevelDirectory = entries.filter(Files::isDirectory).findFirst()
+                    .orElseThrow(() -> new NoSuchElementException(
+                            "Expected a single top-level directory under " + jmodsDestination()
+                                    + " after unpacking " + jmodsUrl));
+            Files.move(topLevelDirectory, jmods);
         }
     }
 
@@ -118,16 +133,16 @@ enum Jvm {
         }
     }
 
-    private void unpackArtifact(URL artifactUrl, Path destination, boolean stripTopLevelDirectory) throws IOException {
+    private void unpackArtifact(URL artifactUrl, Path destination) throws IOException {
         if (Files.exists(destination)) {
             return;
         }
         Path filename = Paths.get(artifactUrl.getPath()).getFileName();
         Path source = destinationDir.resolve(filename);
         if (isZip(source)) {
-            unzip(source, destination, stripTopLevelDirectory);
+            unzip(source, destination);
         } else if (isTarGz(source)) {
-            untargz(source, destination, stripTopLevelDirectory);
+            untargz(source, destination);
         } else {
             throw new RuntimeException("Unknown artifact compression method: " + source);
         }
@@ -186,17 +201,6 @@ enum Jvm {
         return path.getFileName().toString().endsWith(".tar.gz");
     }
 
-    /**
-     * Fjerner det første path-segmentet (arkivets egen toppmappe, f.eks. "jdk-25.0.4+7-jmods")
-     * fra en arkiv-relativ sti, slik at innholdet kan pakkes ut direkte inn i en mappe vi selv
-     * navngir. Returnerer tom streng dersom stien kun besto av toppmappen selv.
-     */
-    private static String stripFirstPathComponent(String entryName) {
-        String normalized = entryName.replace('\\', '/');
-        int slashIndex = normalized.indexOf('/');
-        return (slashIndex < 0) ? "" : normalized.substring(slashIndex + 1);
-    }
-
     Path getJModsDirectory(Path dir) throws IOException {
         try (Stream<Path> paths = Files.walk(dir)) {
             return paths.filter(path -> Files.isDirectory(path) && path.getFileName().toString().equals("jmods"))
@@ -208,7 +212,7 @@ enum Jvm {
         }
     }
 
-    private void unzip(Path inputPath, Path outputDirPath, boolean stripTopLevelDirectory) throws IOException {
+    private void unzip(Path inputPath, Path outputDirPath) throws IOException {
         //noinspection RedundantCast (for Java 13, som overloader newFileSystem())
         try (FileSystem zipFs = FileSystems.newFileSystem(inputPath, (ClassLoader) null)) {
             Path zipRoot = zipFs.getPath("/");
@@ -216,12 +220,6 @@ enum Jvm {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     String relativeName = zipRoot.relativize(file).toString();
-                    if (stripTopLevelDirectory) {
-                        relativeName = stripFirstPathComponent(relativeName);
-                        if (relativeName.isEmpty()) {
-                            return FileVisitResult.CONTINUE;
-                        }
-                    }
                     Path target = outputDirPath.resolve(relativeName);
                     Files.createDirectories(target.getParent());
                     Files.copy(file, target, StandardCopyOption.REPLACE_EXISTING);
@@ -231,21 +229,14 @@ enum Jvm {
         }
     }
 
-    private void untargz(Path inputPath, Path outputDirPath, boolean stripTopLevelDirectory) throws IOException {
+    private void untargz(Path inputPath, Path outputDirPath) throws IOException {
         try (FileInputStream fileInputStream = new FileInputStream(inputPath.toFile());
              BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
              GzipCompressorInputStream gzipInputStream = new GzipCompressorInputStream(bufferedInputStream);
              TarArchiveInputStream tarArchiveInputStream = new TarArchiveInputStream(gzipInputStream)) {
             TarArchiveEntry entry;
             while ((entry = tarArchiveInputStream.getNextEntry()) != null) {
-                String relativeName = entry.getName();
-                if (stripTopLevelDirectory) {
-                    relativeName = stripFirstPathComponent(relativeName);
-                    if (relativeName.isEmpty()) {
-                        continue;
-                    }
-                }
-                Path path = outputDirPath.resolve(relativeName);
+                Path path = outputDirPath.resolve(entry.getName());
                 if (entry.isDirectory()) {
                     Files.createDirectories(path);
                 } else {
